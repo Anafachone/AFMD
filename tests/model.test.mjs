@@ -1,0 +1,7 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {classify,parseImport} from '../public/model.js';
+const clients=[{id:'one',name:'Clínica Horizonte',aliases:['mariana@horizonte.com']},{id:'two',name:'Estúdio Aurora',aliases:['pedro@aurora.com']}];
+test('associa títulos com acentos e participantes por e-mail',()=>{assert.equal(classify({title:'Briefing CLINICA HORIZONTE'},clients),'one');assert.equal(classify({title:'Briefing',participants:['mariana@horizonte.com']},clients),'one');});
+test('não escolhe uma pasta em reuniões ambíguas ou sem evidências',()=>{assert.equal(classify({title:'Reunião geral'},clients),null);assert.equal(classify({title:'Clínica Horizonte e Estúdio Aurora'},clients),null);});
+test('importa falas do Meet preservando nomes e horários',()=>{const raw=JSON.stringify({format:'afmd-meet-v1',title:'Reunião',segments:[{time:'00:12',speaker:'Ana',text:'Vamos revisar.'}]});const result=parseImport(raw,'meet.json');assert.match(result.text,/\[00:12\] Ana: Vamos revisar/);assert.deepEqual(result.participants,['Ana']);});
+test('rejeita JSON alheio e captura vazia',()=>{assert.throws(()=>parseImport('{"segments":[]}', 'x.json'));assert.throws(()=>parseImport('{"format":"afmd-meet-v1","segments":[]}', 'x.json'));});
+test('texto importado não executa HTML',()=>{assert.equal(parseImport('<script>bad()</script>','arquivo.txt').text,'<script>bad()</script>');});
