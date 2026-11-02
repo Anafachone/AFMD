@@ -1,0 +1,2 @@
+ONNX Runtime Web. MIT license. Source: https://github.com/microsoft/onnxruntime
+Version: 1.22.0-dev.20250409-89f8206ba4

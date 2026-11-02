@@ -1,15 +1,22 @@
 {
   "name": "afmd-transcricoes",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --use-env-proxy --env-file-if-exists=.env server.mjs",
-    "start": "node --use-env-proxy --env-file-if-exists=.env server.mjs",
-    "test": "node tests/model.test.mjs && node tests/service-client.test.mjs && node tests/server.test.mjs",
-    "build:extension": "node scripts/package-extension.mjs"
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "build": "node scripts/package-extension.mjs",
+    "build:extension": "node scripts/package-extension.mjs",
+    "test": "node tests/package.test.mjs"
   },
   "engines": {
     "node": ">=24"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1"
   }
 }

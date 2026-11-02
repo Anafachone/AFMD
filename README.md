@@ -1,53 +1,47 @@
-# AFMD Transcrições
+# AFMD Transcrições — versão simples, local e sem API paga
 
-## Baixar e instalar no Chrome
+Gravar microfone ou importar um áudio, transcrever no computador, revisar e copiar/baixar o texto. Mantém a identidade AFMD: azul-marinho, azul de referência, dourado e off-white; Libre Caslon Text e Montserrat.
 
-**[Baixar extensão AFMD 0.3.0 (.zip)](https://github.com/Anafachone/AFMD/raw/refs/heads/main/afmd-chrome.zip)**
+**Estado:** interface e motor local implementados; teste de reconhecimento real bloqueado neste ambiente pelo acesso ao repositório do modelo. Não há uma nova versão pronta para instalar até esse teste passar. O ZIP anterior que dependia de API foi retirado desta branch para evitar outra instalação incompleta.
 
-Extraia o ZIP, abra `chrome://extensions`, ative **Modo do desenvolvedor**, clique em **Carregar sem compactação** e escolha a pasta **AFMD-Transcricoes** que contém `manifest.json`. Confirme o nome **AFMD Transcrições**, versão **0.3.0**. Clique no ícone da extensão e em **Abrir painel AFMD**.
+## Uso previsto
 
-A extensão inclui o painel e uma conexão configurável com API privada. A ativação exige servidor HTTPS e credencial própria de IA; instalar o ZIP sozinho não ativa o processamento. Consulte [SERVICE-SETUP.md](SERVICE-SETUP.md). A captura de legendas do Meet permanece experimental.
+1. Chrome no computador, sem conta de API e sem servidor de IA.
+2. Clique em **Preparar transcrição** e autorize o download do modelo gratuito. O Whisper Tiny quantizado é baixado da Hugging Face e colocado no cache do navegador. São dezenas de MB; a internet é necessária no primeiro download e pode ser necessária novamente se o navegador limpar o cache.
+3. Marque a ciência dos participantes e grave, ou escolha um áudio. Limite inicial: 10 minutos e 20 MB por arquivo.
+4. Ao encerrar, a fala é reconhecida localmente por Transformers.js/ONNX Runtime Web/WASM. O áudio não é enviado a um servidor de transcrição.
+5. Revise o texto e copie/baixe um TXT. Textos são salvos neste navegador; áudio fica disponível para ouvir e baixar durante a sessão, mas não é persistido no histórico.
 
-Versão 0.3.0: painel AFMD embarcado na própria extensão Chrome, versão web responsiva para iPhone e coleta experimental de legendas do Google Meet. O serviço de IA exige servidor HTTPS, credencial de provedor e código de acesso próprio; consulte SERVICE-SETUP.md para ativar a conexão.
+Esta versão transcreve **após encerrar**, não em streaming. Não inclui atas, resumos, identificação de pessoas, captura do Meet, pastas de clientes ou sincronização. A versão para iPhone não foi validada e não é o alvo desta simplificação. Não há garantia de precisão; ruídos, música e falas simultâneas prejudicam o reconhecimento.
 
-## Executar
+O histórico anterior `afmd-v1` não é apagado: transcrições existentes são exibidas na interface simples quando não há histórico novo. Os dados antigos de clientes permanecem no armazenamento, embora não exista mais uma tela para gerenciá-los.
 
-Node.js 24 ou superior, sem dependências npm de produção:
+## Desenvolvimento
+
+Node 24+:
 
 ```sh
-node scripts/init-service.mjs
-npm run dev
+npm ci --ignore-scripts
+npm run build
+npm start
 ```
 
-O servidor escuta em `127.0.0.1:4173` por padrão. `npm test` executa testes de importação, cliente da API e autenticação/limites do servidor; os testes do servidor abrem uma porta local temporária. `node tests/browser.mjs` executa os fluxos de navegador se Playwright e Chromium estiverem disponíveis.
+Os instaladores nativos de GPU não são executados porque a aplicação usa exclusivamente o backend WASM no navegador. O npm continua verificando integridade dos pacotes conforme package-lock.json. O servidor local só entrega arquivos, não oferece uma API de transcrição e não recebe áudio.
 
-Para transcrever áudio e gerar documentos, configure `AFMD_AI_KEY` e `AFMD_ACCESS_TOKEN` no servidor e conecte o painel em Configurações. A ativação está detalhada em [SERVICE-SETUP.md](SERVICE-SETUP.md). A chave permanece no servidor. São usados os endpoints HTTPS `api.openai.com/v1/audio/transcriptions` (gpt-4o-transcribe) e `api.openai.com/v1/chat/completions` (gpt-4o-mini). O ambiente precisa permitir api.openai.com; nenhuma chave é necessária para texto importado, edição, pastas e exportação. Não há resultado fictício quando a IA está indisponível. Limite de arquivo: 24 MB; texto enviado à geração: 100 mil caracteres. Serviço pago conforme uso do provedor.
+O build inclui o JavaScript do motor e os arquivos WASM/MJS locais. Só pesos, tokenizer e configurações do modelo são obtidos pela rede. Não é carregado JavaScript executável de CDN.
 
-## iPhone
+## Instalação da extensão, após validação do motor real
 
-É uma aplicação web instalável (PWA), não um aplicativo da App Store. Hospede em HTTPS sob controle de acesso e abra no Safari; Compartilhar → Adicionar à Tela de Início. Não existe URL pública provisionada neste repositório. Para desenvolvimento em outro dispositivo, um servidor HTTPS/reverse proxy precisa encaminhar para a porta local. Se necessário, `HOST=0.0.0.0` permite acesso pela rede, mas não exponha este servidor sem autenticação, TLS e limites de uso.
+Carregue a pasta `extension` em `chrome://extensions` com Modo do desenvolvedor e Carregar sem compactação. O ícone abre diretamente a tela simples em uma aba. Não há janela separada de captura nem configuração de chave de API.
 
-Pode gravar o microfone com permissão enquanto a tela permanece aberta, importar arquivos, consultar transcrições e gerar documentos. Não captura o áudio de chamadas do Meet/WhatsApp em outros aplicativos do iPhone. Suspensão ou bloqueio de tela pode interromper a gravação. Baixe o áudio ao encerrar: ele só permanece na memória da sessão e não é guardado com o histórico. O shell instalado pode abrir offline depois da primeira visita; IA exige conexão.
+As únicas permissões opcionais de rede são os domínios de distribuição do modelo: `huggingface.co`, `*.huggingface.co`, `*.hf.co`. A preparação solicita essas permissões no clique do usuário. O worker recusa uploads e destinos externos fora desses domínios; as requisições remotas previstas são somente GET/HEAD de arquivos do modelo.
 
-## Chrome / Meet
+## Validação
 
-1. Execute `npm run build:extension` para copiar o painel, fontes e ícone para a pasta `extension`. Abra `chrome://extensions`, ative o modo de desenvolvedor e carregue essa pasta. O nome deve ser **AFMD Transcrições**, versão **0.3.0**. A instalação abre o painel em uma aba; o botão “Abrir painel AFMD” também está disponível na janela da extensão.
-2. Entre em uma reunião em `meet.google.com`, informe os participantes e ative as legendas.
-3. Abra a extensão, clique em Iniciar e depois Encerrar.
-4. O painel embarcado importa automaticamente capturas concluídas, sem duplicá-las. Atribui a pasta quando há uma única associação de cliente. A exportação JSON continua disponível para usar na versão web ou guardar uma cópia.
+`npm test`: integridade do pacote, arquivos do runtime, licença e política da extensão. Requer dependências instaladas e build pronto.
 
-A captura usa elementos de legendas com `data-message-text` e nomes quando presentes em `data-participant-name`. Esses atributos não são API oficial: o layout atual do Meet pode não fornecê-los. Esta integração é experimental, validada apenas com fixture de DOM; **não validada em uma reunião real**. Exibe contagem zero sem fabricar falas quando não encontra legendas. Não há reconhecimento biométrico, identificação garantida em falas simultâneas, nem captura direta do áudio da aba. A captura deve ser encerrada antes da exportação. Os trechos ficam no armazenamento local da extensão e são importados automaticamente pelo painel embarcado. O painel web continua separado e recebe JSON por importação manual. Não há sincronização entre dispositivos.
+`node tests/simple-browser.mjs`: interface, microfone sintético e decodificação WAV real com worker simulado. Usa Playwright e Chromium disponíveis no ambiente de desenvolvimento; não equivale a validar reconhecimento.
 
-## Organização e privacidade
+`node tests/real-local-engine.mjs`: prepara o motor real no Chromium e tenta reconhecer o áudio público de referência JFK. Precisa de acesso HTTPS ao repositório Hugging Face e do arquivo `/tmp/afmd-local-test/jfk.wav`, obtido da amostra pública do whisper.cpp. O teste é pendente/bloqueado, não aprovado. Leia VALIDATION.md.
 
-Histórico, clientes e documentos ficam em localStorage deste navegador. Não há contas, autenticação, armazenamento remoto ou sincronização entre computador e iPhone. Exporte e restaure cópias nas Configurações. Limpar os dados do navegador apaga o histórico. Não use dispositivos compartilhados para conteúdo confidencial sem proteção adicional.
-
-A associação automática é determinística: compara nomes/aliases/e-mails cadastrados com título e participantes. Se houver um único cliente correspondente, associa; se nenhum ou mais de um corresponderem, deixa A revisar. Não cria clientes sozinha nem infere identidades pelo áudio. Etiquetas são editáveis. Para ensinar uma associação, use “Editar cliente e associações” e acrescente o nome ou e-mail ao cadastro.
-
-Áudio só é enviado ao provedor quando você importa ou encerra uma gravação com IA configurada. Transcrições são enviadas ao clicar para gerar documento ou perguntar. O servidor não persiste áudio nem transcrições. O provedor possui políticas próprias de tratamento e retenção. Não há compartilhamento automático com terceiros ou participantes. Atas são minutas e precisam de revisão.
-
-## Identidade e escopo
-
-Superfícies off-white, azul-marinho, azul de referência aproximado e dourado. Libre Caslon Text fornecida pela usuária; Montserrat da coleção oficial Google Fonts com licença incluída. O ícone é uma interpretação gerada do monograma da referência, e deve ser substituído pelo arquivo oficial antes da distribuição.
-
-Próximas integrações necessárias para a versão completa: validar/adaptar seletores no Meet real, captura de áudio da aba com transcrição em fluxo e diarização, login/sincronização, classificação semântica com confiança e revisão, publicação privada em HTTPS. Nenhuma publicação foi feita.
+Nenhum app, API, serviço de hospedagem ou configuração DNS foi publicado. A configuração de rede salva para o ambiente de desenvolvimento aguarda revisão/publicação pelo usuário; ela não altera a rede do seu computador.
