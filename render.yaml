@@ -1,0 +1,19 @@
+# Modelo de instalação. Este arquivo não cria nem publica serviços sozinho.
+services:
+  - type: web
+    name: afmd-transcricoes-api
+    runtime: node
+    plan: free
+    buildCommand: node --check server.mjs
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: HOST
+        value: 0.0.0.0
+      - key: AFMD_AI_KEY
+        sync: false
+      - key: AFMD_ACCESS_TOKEN
+        generateValue: true

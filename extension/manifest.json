@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AFMD Transcrições",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Painel AFMD com histórico, clientes, etiquetas e captura experimental de legendas do Meet.",
   "permissions": [
     "activeTab",
@@ -28,5 +28,16 @@
   },
   "icons": {
     "128": "icon.png"
+  },
+  "host_permissions": [
+    "https://meet.google.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*"
   }
 }

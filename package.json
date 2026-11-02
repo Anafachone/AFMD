@@ -1,12 +1,12 @@
 {
   "name": "afmd-transcricoes",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "node --use-env-proxy --env-file-if-exists=.env server.mjs",
     "start": "node --use-env-proxy --env-file-if-exists=.env server.mjs",
-    "test": "node tests/model.test.mjs",
+    "test": "node tests/model.test.mjs && node tests/service-client.test.mjs && node tests/server.test.mjs",
     "build:extension": "node scripts/package-extension.mjs"
   },
   "engines": {

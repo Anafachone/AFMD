@@ -2,26 +2,26 @@
 
 ## Baixar e instalar no Chrome
 
-**[Baixar extensão AFMD 0.2.0 (.zip)](https://github.com/Anafachone/AFMD/raw/refs/heads/main/afmd-chrome.zip)**
+**[Baixar extensão AFMD 0.3.0 (.zip)](https://github.com/Anafachone/AFMD/raw/refs/heads/main/afmd-chrome.zip)**
 
-Extraia o ZIP, abra `chrome://extensions`, ative **Modo do desenvolvedor**, clique em **Carregar sem compactação** e escolha a pasta **AFMD-Transcricoes** que contém `manifest.json`. Confirme o nome **AFMD Transcrições**, versão **0.2.0**. Clique no ícone da extensão e em **Abrir painel AFMD**.
+Extraia o ZIP, abra `chrome://extensions`, ative **Modo do desenvolvedor**, clique em **Carregar sem compactação** e escolha a pasta **AFMD-Transcricoes** que contém `manifest.json`. Confirme o nome **AFMD Transcrições**, versão **0.3.0**. Clique no ícone da extensão e em **Abrir painel AFMD**.
 
-A extensão inclui o painel. A captura de legendas do Meet é experimental, e a conexão de IA para áudio, atas e resumos ainda não está pronta na extensão. Não depende de pasta `lib`.
+A extensão inclui o painel e uma conexão configurável com API privada. A ativação exige servidor HTTPS e credencial própria de IA; instalar o ZIP sozinho não ativa o processamento. Consulte [SERVICE-SETUP.md](SERVICE-SETUP.md). A captura de legendas do Meet permanece experimental.
 
-Versão 0.2.0: painel AFMD embarcado na própria extensão Chrome, versão web responsiva para iPhone e coleta experimental de legendas do Google Meet. O serviço de IA ainda exige servidor e credencial; na extensão, a conexão de IA não foi implementada.
+Versão 0.3.0: painel AFMD embarcado na própria extensão Chrome, versão web responsiva para iPhone e coleta experimental de legendas do Google Meet. O serviço de IA exige servidor HTTPS, credencial de provedor e código de acesso próprio; consulte SERVICE-SETUP.md para ativar a conexão.
 
 ## Executar
 
 Node.js 24 ou superior, sem dependências npm de produção:
 
 ```sh
-cp .env.example .env
+node scripts/init-service.mjs
 npm run dev
 ```
 
-O servidor escuta em `127.0.0.1:4173` por padrão. `npm test` executa os testes do modelo de importação e organização. `node tests/browser.mjs` executa os fluxos de navegador se Playwright e Chromium estiverem disponíveis.
+O servidor escuta em `127.0.0.1:4173` por padrão. `npm test` executa testes de importação, cliente da API e autenticação/limites do servidor; os testes do servidor abrem uma porta local temporária. `node tests/browser.mjs` executa os fluxos de navegador se Playwright e Chromium estiverem disponíveis.
 
-Para transcrever áudio e gerar documentos, configure `AFMD_AI_KEY` em `.env` ou no gerenciador seguro do servidor. A chave permanece no servidor. São usados os endpoints HTTPS `api.openai.com/v1/audio/transcriptions` (gpt-4o-transcribe) e `api.openai.com/v1/chat/completions` (gpt-4o-mini). O ambiente precisa permitir api.openai.com; nenhuma chave é necessária para texto importado, edição, pastas e exportação. Não há resultado fictício quando a IA está indisponível. Limite de arquivo: 24 MB; texto enviado à geração: 100 mil caracteres. Serviço pago conforme uso do provedor.
+Para transcrever áudio e gerar documentos, configure `AFMD_AI_KEY` e `AFMD_ACCESS_TOKEN` no servidor e conecte o painel em Configurações. A ativação está detalhada em [SERVICE-SETUP.md](SERVICE-SETUP.md). A chave permanece no servidor. São usados os endpoints HTTPS `api.openai.com/v1/audio/transcriptions` (gpt-4o-transcribe) e `api.openai.com/v1/chat/completions` (gpt-4o-mini). O ambiente precisa permitir api.openai.com; nenhuma chave é necessária para texto importado, edição, pastas e exportação. Não há resultado fictício quando a IA está indisponível. Limite de arquivo: 24 MB; texto enviado à geração: 100 mil caracteres. Serviço pago conforme uso do provedor.
 
 ## iPhone
 
@@ -31,7 +31,7 @@ Pode gravar o microfone com permissão enquanto a tela permanece aberta, importa
 
 ## Chrome / Meet
 
-1. Execute `npm run build:extension` para copiar o painel, fontes e ícone para a pasta `extension`. Abra `chrome://extensions`, ative o modo de desenvolvedor e carregue essa pasta. O nome deve ser **AFMD Transcrições**, versão **0.2.0**. A instalação abre o painel em uma aba; o botão “Abrir painel AFMD” também está disponível na janela da extensão.
+1. Execute `npm run build:extension` para copiar o painel, fontes e ícone para a pasta `extension`. Abra `chrome://extensions`, ative o modo de desenvolvedor e carregue essa pasta. O nome deve ser **AFMD Transcrições**, versão **0.3.0**. A instalação abre o painel em uma aba; o botão “Abrir painel AFMD” também está disponível na janela da extensão.
 2. Entre em uma reunião em `meet.google.com`, informe os participantes e ative as legendas.
 3. Abra a extensão, clique em Iniciar e depois Encerrar.
 4. O painel embarcado importa automaticamente capturas concluídas, sem duplicá-las. Atribui a pasta quando há uma única associação de cliente. A exportação JSON continua disponível para usar na versão web ou guardar uma cópia.
