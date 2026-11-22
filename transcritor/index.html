@@ -43,6 +43,7 @@ label.sel{display:grid;gap:6px;font-size:13px;font-weight:600}
 select,textarea,button{font:inherit;color:inherit}
 select{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);max-width:320px}
 button{border:1px solid var(--line);background:var(--surface);padding:11px 18px;border-radius:8px;cursor:pointer;font-weight:600}
+.choice button[aria-pressed="true"]{outline:3px solid var(--lav-300)}
 button.primary{background:var(--blue-600);border-color:var(--blue-600);color:var(--on-accent)}
 button:disabled{opacity:.5;cursor:not-allowed}
 button:focus-visible,select:focus-visible,textarea:focus-visible,.drop:focus-visible{outline:3px solid var(--lav-600);outline-offset:2px}
@@ -58,6 +59,7 @@ ol.steps b{color:var(--navy)}
 .prompt{background:var(--lav-100);border-radius:8px;padding:12px 14px;font-size:14px;overflow-wrap:anywhere}
 textarea{width:100%;min-height:260px;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);line-height:1.8;resize:vertical}
 .meta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.choice{display:flex;flex-wrap:wrap;gap:10px}
 .pick{display:flex;gap:8px;flex-wrap:wrap}
 .pick button{padding:7px 12px;font-size:12.5px}
 .pick button[aria-pressed="true"]{background:var(--lav-100);border-color:var(--blue-600)}
@@ -81,6 +83,11 @@ textarea{width:100%;min-height:260px;padding:14px;border:1px solid var(--line);b
     <div class="file" id="info" hidden></div>
     <video id="probe" playsinline preload="metadata" hidden></video>
 
+    <div class="choice" id="choice" hidden>
+      <button class="primary" id="pickTranscribe">Transcrever direto</button>
+      <button id="pickCompress">Comprimir primeiro</button>
+    </div>
+    <div class="msg" id="directMsg" hidden>Sem redução. Anexe o arquivo original ao Claude na etapa 2.</div>
     <div id="tools" hidden style="display:grid;gap:16px">
       <div class="modes" role="radiogroup" aria-label="Tipo de redução">
         <label class="mode"><span style="color:var(--navy)"><input type="radio" name="mode" value="audio" checked><strong>Somente áudio</strong></span><span>Menor tamanho e suficiente para transcrever. Salva em webm (Opus).</span></label>
@@ -181,8 +188,14 @@ function setFile(f){
   const isAudio=/\.mp3$/i.test(f.name);
   if(isAudio)document.querySelector('input[value=video]').disabled=true;
   document.querySelector('input[value=audio]').checked=true;syncMode();
-  $('tools').hidden=false;
+  $('choice').hidden=false;$('tools').hidden=true;$('directMsg').hidden=true;
+  document.querySelectorAll('#choice button').forEach(b=>b.setAttribute('aria-pressed','false'));
 }
+$('pickCompress').onclick=()=>{$('tools').hidden=false;$('directMsg').hidden=true;
+  $('pickCompress').setAttribute('aria-pressed','true');$('pickTranscribe').setAttribute('aria-pressed','false')};
+$('pickTranscribe').onclick=()=>{$('tools').hidden=true;$('directMsg').hidden=false;
+  $('pickTranscribe').setAttribute('aria-pressed','true');$('pickCompress').setAttribute('aria-pressed','false');
+  $('s2').scrollIntoView({behavior:'smooth',block:'start'})};
 function syncMode(){const m=document.querySelector('input[name=mode]:checked').value;$('rwrap').hidden=m!=='video'}
 document.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=syncMode);
 
