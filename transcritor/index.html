@@ -1,8 +1,8 @@
-<title>AFMD Transcritor</title>
+<title>AFMD Compressor de Vídeo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;500;600&display=swap">
 <style>
-/* Layout: coluna única em 3 etapas (preparar, transcrever, copiar). Identidade AFMD: Libre Baskerville + Montserrat, lavanda e azul. */
+/* Layout: coluna única, três blocos (arquivo, ajuste, resultado). Identidade AFMD: Libre Baskerville + Montserrat, lavanda azulada e azul. */
 :root{
   --bg:#f4f6fc; --surface:#ffffff; --lav-100:#e8ecfa; --lav-300:#bcc8ee; --lav-600:#5a70c2;
   --blue-600:#2f52b0; --navy:#20304b; --muted:#5b6585; --line:#d3daee; --ok:#2d7a57; --err:#a8383f;
@@ -22,156 +22,96 @@ body{margin:0;background:var(--bg);color:var(--navy);font:15px/1.6 var(--font-bo
 main{max-width:860px;margin:0 auto;display:grid;gap:24px}
 header{display:grid;gap:6px}
 .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--lav-600);font-weight:600}
-h1{font:700 clamp(30px,5vw,44px)/1.15 var(--font-display);margin:0;text-wrap:balance}
+h1{font:700 clamp(28px,5vw,42px)/1.2 var(--font-display);margin:0;text-wrap:balance}
 header p{margin:0;color:var(--muted);max-width:60ch}
 section{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:16px;min-width:0}
-h2{font:700 21px/1.3 var(--font-display);margin:0;display:flex;gap:10px;align-items:baseline}
+h2{font:700 20px/1.3 var(--font-display);margin:0;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 h2 small{font:600 11px var(--font-body);letter-spacing:.18em;text-transform:uppercase;color:var(--lav-600)}
 .drop{border:2px dashed var(--lav-300);background:var(--lav-100);border-radius:var(--r);padding:32px 18px;text-align:center;cursor:pointer;display:grid;gap:6px}
 .drop.over{border-color:var(--blue-600)}
-.drop strong{font:700 18px var(--font-display)}
+.drop strong{font:700 17px var(--font-display)}
 .drop span{color:var(--muted);font-size:13px}
 .file{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px;color:var(--muted)}
-.file b{color:var(--navy);font-weight:600}
-.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-.mode{border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:4px;cursor:pointer;background:var(--surface)}
-.mode:has(input:checked){border-color:var(--blue-600);background:var(--lav-100)}
-.mode input{accent-color:var(--blue-600);margin-right:8px}
-.mode strong{font-weight:600}
-.mode span{font-size:12.5px;color:var(--muted)}
+.file b{color:var(--navy);font-weight:600;overflow-wrap:anywhere}
 label.sel{display:grid;gap:6px;font-size:13px;font-weight:600}
-select,textarea,button{font:inherit;color:inherit}
-select{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);max-width:320px}
+select,input[type=number],button{font:inherit;color:inherit}
+select,input[type=number]{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);width:100%;max-width:220px}
 button{border:1px solid var(--line);background:var(--surface);padding:11px 18px;border-radius:8px;cursor:pointer;font-weight:600}
-.choice button[aria-pressed="true"]{outline:3px solid var(--lav-300)}
 button.primary{background:var(--blue-600);border-color:var(--blue-600);color:var(--on-accent)}
 button:disabled{opacity:.5;cursor:not-allowed}
-button:focus-visible,select:focus-visible,textarea:focus-visible,.drop:focus-visible{outline:3px solid var(--lav-600);outline-offset:2px}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button:focus-visible,select:focus-visible,input:focus-visible,.drop:focus-visible{outline:3px solid var(--lav-600);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end}
+.plan{background:var(--lav-100);border-radius:8px;padding:12px 14px;font-size:13.5px;display:grid;gap:2px}
+.plan b{font-variant-numeric:tabular-nums}
 progress{width:100%;height:10px;accent-color:var(--blue-600)}
-.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 .stat{background:var(--lav-100);border-radius:8px;padding:12px;display:grid;gap:2px}
 .stat span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.stat b{font:700 22px var(--font-display);font-variant-numeric:tabular-nums}
+.stat b{font:700 21px var(--font-display);font-variant-numeric:tabular-nums}
 .msg{font-size:13px;color:var(--muted)} .msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
-ol.steps{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--muted);font-size:14px}
-ol.steps b{color:var(--navy)}
-.prompt{background:var(--lav-100);border-radius:8px;padding:12px 14px;font-size:14px;overflow-wrap:anywhere}
-textarea{width:100%;min-height:260px;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);line-height:1.8;resize:vertical}
-.meta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.choice{display:flex;flex-wrap:wrap;gap:10px}
-.pick{display:flex;gap:8px;flex-wrap:wrap}
-.pick button{padding:7px 12px;font-size:12.5px}
-.pick button[aria-pressed="true"]{background:var(--lav-100);border-color:var(--blue-600)}
+video{width:100%;max-height:340px;border-radius:8px;background:#000}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <main>
   <header>
     <div class="eyebrow">AFMD</div>
-    <h1>Transcritor de áudio e vídeo</h1>
-    <p>Reduza o arquivo, envie ao Claude para transcrever e copie o texto pronto para colar em outro lugar.</p>
+    <h1>Compressor de vídeo</h1>
+    <p>Reduza um vídeo mp4 ou mov para menos de 180 MB direto no navegador. O arquivo não sai do seu computador.</p>
   </header>
 
   <section aria-labelledby="s1">
-    <h2 id="s1"><small>Etapa 1</small>Preparar o arquivo</h2>
-    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher arquivo mp3, mp4 ou mov">
-      <strong>Solte o arquivo aqui ou clique para escolher</strong>
-      <span>mp3, mp4 ou mov</span>
+    <h2 id="s1"><small>1</small>Escolher o vídeo</h2>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher vídeo mp4 ou mov">
+      <strong>Solte o vídeo aqui ou clique para escolher</strong>
+      <span>mp4 ou mov</span>
     </div>
-    <input id="file" type="file" accept=".mp3,.mp4,.mov,audio/mpeg,video/mp4,video/quicktime" hidden>
+    <input id="file" type="file" accept=".mp4,.mov,video/mp4,video/quicktime" hidden>
     <div class="file" id="info" hidden></div>
-    <video id="probe" playsinline preload="metadata" hidden></video>
-
-    <div class="choice" id="choice" hidden>
-      <button class="primary" id="pickTranscribe">Transcrever direto</button>
-      <button id="pickCompress">Comprimir primeiro</button>
-    </div>
-    <div class="msg" id="directMsg" hidden>Sem redução. Anexe o arquivo original ao Claude na etapa 2.</div>
-    <div id="tools" hidden style="display:grid;gap:16px">
-      <div class="modes" role="radiogroup" aria-label="Tipo de redução">
-        <label class="mode"><span style="color:var(--navy)"><input type="radio" name="mode" value="audio" checked><strong>Somente áudio</strong></span><span>Menor tamanho e suficiente para transcrever. Salva em webm (Opus).</span></label>
-        <label class="mode"><span style="color:var(--navy)"><input type="radio" name="mode" value="video"><strong>Vídeo reduzido</strong></span><span>Mantém a imagem com resolução e qualidade menores. Salva em webm.</span></label>
-      </div>
-      <div class="row" style="align-items:end;gap:18px">
-        <label class="sel" id="qwrap">Qualidade
-          <select id="quality">
-            <option value="24000">Menor tamanho (24 kbps)</option>
-            <option value="48000" selected>Equilibrada (48 kbps)</option>
-            <option value="96000">Melhor qualidade (96 kbps)</option>
-          </select>
-        </label>
-        <label class="sel" id="rwrap" hidden>Resolução
-          <select id="res">
-            <option value="360">360p</option>
-            <option value="480" selected>480p</option>
-            <option value="720">720p</option>
-          </select>
-        </label>
-        <button class="primary" id="go">Reduzir arquivo</button>
-      </div>
-      <p class="msg">A redução roda no seu navegador e leva o tempo de duração do arquivo. Mantenha esta aba aberta e visível.</p>
-      <progress id="bar" max="1" value="0" hidden></progress>
-      <div class="msg" id="status" role="status"></div>
-      <div class="result" id="result" hidden>
-        <div class="stat"><span>Original</span><b id="mbBefore">-</b></div>
-        <div class="stat"><span>Reduzido</span><b id="mbAfter">-</b></div>
-        <div class="stat"><span>Economia</span><b id="mbSaved">-</b></div>
-      </div>
-      <div class="row"><button id="save" hidden>Salvar arquivo reduzido</button></div>
-    </div>
+    <div class="msg err" id="err1" role="alert"></div>
   </section>
 
-  <section aria-labelledby="s2">
-    <h2 id="s2"><small>Etapa 2</small>Transcrever</h2>
-    <div class="row"><button class="primary" id="dgo" disabled>Transcrever com Descript</button><span class="msg" id="dmsg" role="status">Escolha um arquivo na etapa 1.</span></div>
-    <div class="msg" id="dfall" hidden>Se o Descript recusar o arquivo por aqui, envie-o direto no <a href="https://web.descript.com" target="_blank" rel="noopener">Descript</a>, copie o texto de lá e cole na etapa 3.</div>
-    <p class="msg">Ou transcreva pelo chat com o Claude:</p>
-    <ol class="steps">
-      <li>Anexe o arquivo (original ou reduzido) na conversa com o Claude.</li>
-      <li>Envie esta instrução: <div class="prompt" id="prompt">Transcreva este arquivo em português e coloque o texto no meu Transcritor AFMD.</div></li>
-      <li>Quando o Claude terminar, o texto aparece na etapa 3.</li>
-    </ol>
-    <div class="row"><button id="copyPrompt">Copiar instrução</button><span class="msg" id="pmsg"></span></div>
-  </section>
-
-  <section aria-labelledby="s3">
-    <h2 id="s3"><small>Etapa 3</small>Texto transcrito</h2>
-    <div class="pick" id="pick" hidden></div>
-    <label class="sel" for="text">Transcrição (você também pode colar ou editar aqui)</label>
-    <textarea id="text" placeholder="A transcrição aparece aqui."></textarea>
+  <section aria-labelledby="s2" id="adj" hidden>
+    <h2 id="s2"><small>2</small>Ajustar e comprimir</h2>
     <div class="row">
-      <button class="primary" id="copy">Copiar texto</button>
-      <button id="clear">Limpar</button>
-      <span class="meta" id="count">0 palavras</span>
-      <span class="msg" id="cmsg" role="status"></span>
+      <label class="sel" for="target">Tamanho máximo (MB)
+        <input id="target" type="number" min="5" max="1000" step="1" value="180">
+      </label>
+      <label class="sel" for="res">Resolução
+        <select id="res">
+          <option value="auto" selected>Automática</option>
+          <option value="1080">Até 1080p</option>
+          <option value="720">Até 720p</option>
+          <option value="480">Até 480p</option>
+        </select>
+      </label>
     </div>
+    <div class="plan" id="plan" aria-live="polite"></div>
+    <div class="row"><button class="primary" id="go">Comprimir vídeo</button></div>
+    <p class="msg">A compressão acontece em tempo real: leva a duração do vídeo. Mantenha esta aba aberta e visível até terminar.</p>
+    <progress id="bar" max="1" value="0" hidden></progress>
+    <div class="msg" id="status" role="status"></div>
+  </section>
+
+  <section aria-labelledby="s3" id="res3" hidden>
+    <h2 id="s3"><small>3</small>Resultado</h2>
+    <div class="result">
+      <div class="stat"><span>Original</span><b id="mbBefore">-</b></div>
+      <div class="stat"><span>Comprimido</span><b id="mbAfter">-</b></div>
+      <div class="stat"><span>Economia</span><b id="mbSaved">-</b></div>
+    </div>
+    <div class="msg" id="verdict"></div>
+    <video id="preview" controls playsinline></video>
+    <div class="row"><button class="primary" id="save">Salvar vídeo comprimido</button><span class="msg" id="smsg" role="status"></span></div>
   </section>
 </main>
 
 <script>
 const $=id=>document.getElementById(id);
-const fmtMB=b=>(b/1048576).toFixed(b<10485760?2:1)+' MB';
-const fmtT=s=>{s=Math.round(s);const m=Math.floor(s/60);return m+':'+String(s%60).padStart(2,'0')};
-let file=null,out=null,outName='',busy=false;
-
-/* copiar com fallback */
-async function copyText(text,el,msgEl){
-  try{await navigator.clipboard.writeText(text);msgEl.textContent='Copiado.';msgEl.className='msg ok'}
-  catch(e){
-    try{el.focus();el.select&&el.select();const ok=document.execCommand('copy');
-      msgEl.textContent=ok?'Copiado.':'Selecione o texto e use Ctrl+C.';msgEl.className='msg '+(ok?'ok':'err')}
-    catch(_){msgEl.textContent='Selecione o texto e use Ctrl+C.';msgEl.className='msg err'}
-  }
-  setTimeout(()=>{msgEl.textContent=''},3000);
-}
-$('copy').onclick=()=>{ if(!$('text').value.trim()){$('cmsg').textContent='Não há texto para copiar.';$('cmsg').className='msg err';return}
-  copyText($('text').value,$('text'),$('cmsg'))};
-$('copyPrompt').onclick=()=>{const t=document.createElement('textarea');t.value=$('prompt').textContent;document.body.append(t);
-  copyText(t.value,t,$('pmsg')).finally(()=>t.remove())};
-$('clear').onclick=()=>{$('text').value='';upd()};
-const upd=()=>{const w=$('text').value.trim().split(/\s+/).filter(Boolean).length;$('count').textContent=w+(w===1?' palavra':' palavras')};
-$('text').addEventListener('input',upd);
+const MB=1048576;
+const fmtMB=b=>(b/MB).toFixed(b<10*MB?2:1)+' MB';
+const fmtT=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s%60).padStart(2,'0')};
+let file=null,dur=0,vw=0,vh=0,out=null,outName='',busy=false,previewUrl=null;
 
 /* escolher arquivo */
 $('drop').onclick=()=>$('file').click();
@@ -182,146 +122,89 @@ $('drop').addEventListener('drop',e=>{if(e.dataTransfer.files[0])setFile(e.dataT
 $('file').onchange=e=>{if(e.target.files[0])setFile(e.target.files[0])};
 
 function setFile(f){
-  if(!/\.(mp3|mp4|mov)$/i.test(f.name)){$('info').hidden=false;$('info').innerHTML='<b style="color:var(--err)">Formato não aceito. Use mp3, mp4 ou mov.</b>';return}
-  file=f;out=null;$('save').hidden=true;$('result').hidden=true;$('status').textContent='';$('bar').hidden=true;
-  const v=$('probe');v.src=URL.createObjectURL(f);
-  $('info').hidden=false;$('info').innerHTML=`<span><b>${f.name.replace(/</g,'&lt;')}</b></span><span>${fmtMB(f.size)}</span><span id="dur"></span>`;
-  v.onloadedmetadata=()=>{$('dur').textContent='Duração '+fmtT(v.duration)};
-  v.onerror=()=>{$('status').textContent='Este navegador não conseguiu ler o arquivo. Você ainda pode anexá-lo ao Claude sem reduzir.';$('status').className='msg err'};
-  const isAudio=/\.mp3$/i.test(f.name);
-  if(isAudio)document.querySelector('input[value=video]').disabled=true;
-  document.querySelector('input[value=audio]').checked=true;syncMode();
-  $('choice').hidden=false;$('tools').hidden=true;$('directMsg').hidden=true;
-  $('dgo').disabled=false;$('dmsg').textContent='Pronto para enviar ao Descript.';$('dmsg').className='msg';$('dfall').hidden=true;
-  document.querySelectorAll('#choice button').forEach(b=>b.setAttribute('aria-pressed','false'));
+  $('err1').textContent='';
+  if(!/\.(mp4|mov)$/i.test(f.name)){$('err1').textContent='Formato não aceito. Use mp4 ou mov.';return}
+  const v=document.createElement('video');v.preload='metadata';v.src=URL.createObjectURL(f);
+  v.onloadedmetadata=()=>{
+    file=f;dur=v.duration;vw=v.videoWidth;vh=v.videoHeight;out=null;
+    $('res3').hidden=true;$('status').textContent='';$('bar').hidden=true;
+    $('info').hidden=false;
+    $('info').innerHTML='<span><b></b></span><span>'+fmtMB(f.size)+'</span><span>Duração '+fmtT(dur)+'</span><span>'+vw+'×'+vh+'</span>';
+    $('info').querySelector('b').textContent=f.name;
+    $('adj').hidden=false;plan();
+  };
+  v.onerror=()=>{$('err1').textContent='Este navegador não conseguiu ler o vídeo. Tente no Chrome ou no Edge.'};
 }
-$('pickCompress').onclick=()=>{$('tools').hidden=false;$('directMsg').hidden=true;
-  $('pickCompress').setAttribute('aria-pressed','true');$('pickTranscribe').setAttribute('aria-pressed','false')};
-$('pickTranscribe').onclick=()=>{$('tools').hidden=true;$('directMsg').hidden=false;
-  $('pickTranscribe').setAttribute('aria-pressed','true');$('pickCompress').setAttribute('aria-pressed','false');
-  $('s2').scrollIntoView({behavior:'smooth',block:'start'})};
-function syncMode(){const m=document.querySelector('input[name=mode]:checked').value;$('rwrap').hidden=m!=='video'}
-document.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=syncMode);
 
-/* reduzir (gravação em tempo real) */
+/* plano: bitrate de vídeo para caber no tamanho máximo */
+const AUDIO_BPS=96000;
+function calc(){
+  const target=Math.max(5,+$('target').value||180);
+  const budget=target*MB*0.90*8;               /* 10% de margem para o container */
+  const total=budget/dur;
+  const video=Math.max(150000,total-AUDIO_BPS);
+  let h=Math.min(vh,1080);const sel=$('res').value;
+  if(sel==='auto'){ /* resolução proporcional ao bitrate disponível */
+    const cap=video>4e6?1080:video>2e6?720:video>8e5?480:360;h=Math.min(vh,cap);
+  }else h=Math.min(vh,+sel);
+  const w=Math.round(h*(vw/vh)/2)*2;
+  return {target,video,h:Math.round(h/2)*2,w};
+}
+function plan(){
+  if(!file)return;
+  const p=calc();
+  const already=file.size<p.target*MB;
+  $('plan').innerHTML=(already?'O vídeo original já tem menos de '+p.target+' MB. Você pode comprimir mesmo assim.<br>':'')+
+    'Saída em <b>'+p.w+'×'+p.h+'</b> com cerca de <b>'+(p.video/1e6).toFixed(2)+' Mbps</b> de vídeo.';
+}
+$('target').oninput=plan;$('res').onchange=plan;
+
+/* comprimir (regravação em tempo real) */
 $('go').onclick=async()=>{
   if(!file||busy)return;
-  busy=true;$('go').disabled=true;out=null;$('save').hidden=true;$('result').hidden=true;
-  const mode=document.querySelector('input[name=mode]:checked').value;
-  const abr=+$('quality').value, h=+$('res').value;
+  busy=true;$('go').disabled=true;out=null;$('res3').hidden=true;
+  const p=calc();const bar=$('bar');bar.hidden=false;bar.value=0;$('status').className='msg';
   const v=document.createElement('video');v.src=URL.createObjectURL(file);v.playsInline=true;v.preload='auto';
-  const bar=$('bar');bar.hidden=false;bar.value=0;$('status').className='msg';
+  let raf,tick;
   try{
     await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=()=>no(new Error('Arquivo ilegível neste navegador.'))});
     const ac=new (window.AudioContext||window.webkitAudioContext)();
-    const src=ac.createMediaElementSource(v), dest=ac.createMediaStreamDestination();src.connect(dest);
-    const tracks=[...dest.stream.getAudioTracks()];
-    let cv,ctx,raf;
-    if(mode==='video'){
-      const ar=(v.videoWidth||16)/(v.videoHeight||9);cv=document.createElement('canvas');
-      cv.height=h;cv.width=Math.round(h*ar/2)*2;ctx=cv.getContext('2d');
-      tracks.push(...cv.captureStream(30).getVideoTracks());
-    }
-    const stream=new MediaStream(tracks);
-    const types=mode==='video'?['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm']:['audio/webm;codecs=opus','audio/webm'];
+    const src=ac.createMediaElementSource(v),dest=ac.createMediaStreamDestination();src.connect(dest);
+    const cv=document.createElement('canvas');cv.width=p.w;cv.height=p.h;const ctx=cv.getContext('2d');
+    const stream=new MediaStream([...cv.captureStream(30).getVideoTracks(),...dest.stream.getAudioTracks()]);
+    const types=['video/mp4;codecs=avc1,mp4a.40.2','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
     const mime=types.find(t=>MediaRecorder.isTypeSupported(t));
-    if(!mime)throw new Error('Este navegador não grava webm. Use o Chrome ou o Edge.');
-    const rec=new MediaRecorder(stream,mode==='video'?{mimeType:mime,audioBitsPerSecond:abr/2>64000?64000:Math.max(24000,abr/2),videoBitsPerSecond:{360:350000,480:600000,720:1200000}[h]*(abr/48000)}:{mimeType:mime,audioBitsPerSecond:abr});
+    if(!mime)throw new Error('Este navegador não grava vídeo comprimido. Use o Chrome ou o Edge.');
+    const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:Math.round(p.video),audioBitsPerSecond:AUDIO_BPS});
     const chunks=[];rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
-    const done=new Promise(r=>rec.onstop=r);
+    const stopped=new Promise(r=>rec.onstop=r);
     const draw=()=>{ctx.drawImage(v,0,0,cv.width,cv.height);raf=requestAnimationFrame(draw)};
-    v.muted=false;v.volume=1;await ac.resume();
-    /* o áudio vai só para o gravador, não para os alto-falantes */
-    rec.start(1000);await v.play();if(ctx)draw();
-    $('status').textContent='Reduzindo... '+fmtT(0)+' de '+fmtT(v.duration);
-    const tick=setInterval(()=>{bar.value=v.currentTime/v.duration;$('status').textContent='Reduzindo... '+fmtT(v.currentTime)+' de '+fmtT(v.duration)},500);
+    await ac.resume();rec.start(1000);await v.play();draw();
+    tick=setInterval(()=>{bar.value=v.currentTime/v.duration;$('status').textContent='Comprimindo... '+fmtT(v.currentTime)+' de '+fmtT(v.duration)},500);
     await new Promise(r=>v.onended=r);
-    clearInterval(tick);cancelAnimationFrame(raf);rec.stop();await done;ac.close();
+    clearInterval(tick);cancelAnimationFrame(raf);rec.stop();await stopped;ac.close();
+    const ext=mime.startsWith('video/mp4')?'mp4':'webm';
     out=new Blob(chunks,{type:mime.split(';')[0]});
-    outName=file.name.replace(/\.[^.]+$/,'')+(mode==='video'?'-reduzido':'-audio')+'.webm';
+    outName=file.name.replace(/\.[^.]+$/,'')+'-comprimido.'+ext;
     bar.value=1;
     const saved=1-out.size/file.size;
     $('mbBefore').textContent=fmtMB(file.size);$('mbAfter').textContent=fmtMB(out.size);
     $('mbSaved').textContent=saved>0?Math.round(saved*100)+'%':'0%';
-    $('result').hidden=false;$('save').hidden=false;
-    $('status').textContent=saved>0?'Pronto. Salve o arquivo e anexe ao Claude.':'O arquivo reduzido ficou maior que o original. Use o original ou escolha uma qualidade menor.';
-    $('status').className='msg '+(saved>0?'ok':'err');
-  }catch(e){$('status').textContent=e.message||'Não foi possível reduzir o arquivo.';$('status').className='msg err'}
+    const ok=out.size<p.target*MB;
+    $('verdict').textContent=ok?'O vídeo ficou abaixo de '+p.target+' MB.':'O vídeo passou de '+p.target+' MB. Diminua o tamanho máximo em uns 15% ou a resolução e comprima de novo.';
+    $('verdict').className='msg '+(ok?'ok':'err');
+    if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(out);$('preview').src=previewUrl;
+    $('res3').hidden=false;$('status').textContent='Pronto.';$('status').className='msg ok';
+    $('res3').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){clearInterval(tick);cancelAnimationFrame(raf);$('status').textContent=e.message||'Não foi possível comprimir o vídeo.';$('status').className='msg err'}
   busy=false;$('go').disabled=false;
 };
+
 $('save').onclick=async()=>{
   if(!out)return;
   let d=null;try{d=await claude.use('downloads')}catch(_){}
-  if(d){try{await d.save({filename:outName,data:out});return}catch(e){if(e&&e.code==='declined')return}}
-  $('status').textContent='Salvar direto não está disponível aqui. Abra a página no navegador para baixar.';$('status').className='msg err';
+  if(!d){$('smsg').textContent='Salvar direto não está disponível aqui. Abra a página no navegador.';$('smsg').className='msg err';return}
+  try{await d.save({filename:outName,data:out});$('smsg').textContent='';}
+  catch(e){if(e&&e.code!=='declined'){$('smsg').textContent='Não foi possível salvar. Tente de novo.';$('smsg').className='msg err'}}
 };
-
-/* transcrever pelo Descript (tentativa; depende do que o conector aceita) */
-const DMSG=(t,c)=>{$('dmsg').textContent=t;$('dmsg').className='msg '+(c||'')};
-const pick=(o,keys)=>{for(const k of keys){if(o&&o[k]!=null)return o[k]}};
-function findText(p){
-  if(typeof p==='string')return p;
-  const t=pick(p,['transcript','text','content']);
-  if(typeof t==='string')return t;
-  const r=p&&p.result;if(r&&r!==p)return findText(r);
-  return '';
-}
-$('dgo').onclick=async()=>{
-  if(!file)return;
-  $('dgo').disabled=true;$('dfall').hidden=true;
-  try{
-    const mcp=await claude.use('mcp'), assets=await claude.use('assets');
-    if(!mcp)throw {why:'O conector não está disponível nesta visualização.'};
-    if(!assets)throw {why:'Enviar arquivo exige permissão de editor neste artefato.'};
-    const src=out||file;
-    if(src.size>20*1048576)throw {why:'O arquivo passa de 20 MB. Reduza o tamanho na etapa 1 e tente de novo.'};
-    DMSG('Enviando o arquivo...');
-    const up=await assets.upload(src instanceof File?src:new File([src],outName,{type:src.type}));
-    const url=new URL(up.url,location.href).href;
-    DMSG('Pedindo a transcrição ao Descript...');
-    const r1=await mcp.callTool('Descript','transcribe_audio_video',{url,language:'pt',format:'txt'});
-    const p1=r1.payload||{};
-    const job=pick(p1,['job_id','jobId']);
-    if(!job)throw {why:'O Descript não devolveu um código de tarefa.'};
-    let r2,p2={};
-    for(let i=0;i<40;i++){
-      DMSG('Transcrevendo... aguarde ('+(i+1)+')');
-      r2=await mcp.callTool('Descript','wait_for_job',{job_id:job});p2=r2.payload||{};
-      const st=pick(p2,['status','state'])||pick(p2.result||{},['status']);
-      if(st==='success'||st==='completed'||st==='succeeded')break;
-      if(st==='failed'||st==='error'||st==='cancelled')throw {why:'O Descript não conseguiu processar o arquivo.'};
-    }
-    let txt=findText(p2);
-    if(!txt){
-      const args=pick(p1,['transcript_export'])||pick(p2,['transcript_export'])||pick(p2.result||{},['transcript_export']);
-      if(args){const r3=await mcp.callTool('Descript','export_transcript',args);txt=findText(r3.payload||'')||(r3.content||[]).map(b=>b.text||'').join('\n')}
-    }
-    if(!txt.trim())throw {why:'O Descript terminou, mas não devolveu o texto.'};
-    $('text').value=txt.trim();upd();DMSG('Pronto. O texto está na etapa 3.','ok');
-    $('s3').scrollIntoView({behavior:'smooth',block:'start'});
-  }catch(e){
-    DMSG((e&&e.why)||(e&&e.message)||'Não foi possível transcrever por aqui.','err');
-    $('dfall').hidden=false;
-  }
-  $('dgo').disabled=false;
-};
-
-/* transcrições enviadas pelo Claude (opcional, via db) */
-(async()=>{
-  try{
-    const db=await claude.use('db');if(!db)return;
-    const col=db.collection('transcricoes');let docs=[],sel=null;
-    const render=()=>{
-      const p=$('pick');p.hidden=!docs.length;p.innerHTML='';
-      docs.forEach(d=>{const b=document.createElement('button');b.textContent=d.title||d.id;b.setAttribute('aria-pressed',d.id===sel);
-        b.onclick=()=>{sel=d.id;$('text').value=d.text||'';upd();render()};p.append(b)});
-    };
-    col.onSnapshot(s=>{
-      docs=s.docs.filter(x=>x.exists).map(x=>({id:x.id,...x.data()}));
-      docs.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-      if(docs.length&&(sel===null||!$('text').value.trim())){sel=docs[0].id;$('text').value=docs[0].text||'';upd()}
-      render();
-    },()=>{});
-  }catch(_){}
-})();
 </script>
