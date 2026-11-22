@@ -96,9 +96,9 @@ video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px 
     <div class="cardhead"><span class="lab">Passo 1</span><h2 id="s1">Escolher o vídeo</h2></div>
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher vídeo mp4 ou mov">
       <strong>Solte o vídeo aqui ou clique para escolher</strong>
-      <span>mp4 ou mov</span>
+      <span>mp4 ou mov, da galeria ou dos arquivos</span>
     </div>
-    <input id="file" type="file" accept=".mp4,.mov,video/mp4,video/quicktime" hidden>
+    <input id="file" type="file" accept="video/*,.mp4,.mov" hidden>
     <div class="file" id="info" hidden></div>
     <div class="msg err" id="err1" role="alert"></div>
   </section>
@@ -155,9 +155,12 @@ $('file').onchange=e=>{if(e.target.files[0])setFile(e.target.files[0])};
 
 function setFile(f){
   $('err1').textContent='';
-  if(!/\.(mp4|mov)$/i.test(f.name)){$('err1').textContent='Formato não aceito. Use mp4 ou mov.';return}
-  const v=document.createElement('video');v.preload='metadata';v.src=URL.createObjectURL(f);
-  v.onloadedmetadata=()=>{
+  const okFile=/\.(mp4|mov|m4v)$/i.test(f.name)||(f.type&&f.type.startsWith('video/'));
+  if(!okFile){$('err1').textContent='Formato não aceito. Use um vídeo mp4 ou mov.';return}
+  $('err1').textContent='Lendo o vídeo...';
+  const v=document.createElement('video');v.preload='metadata';v.muted=true;v.playsInline=true;v.src=URL.createObjectURL(f);
+  const slow=setTimeout(()=>{if(file!==f)$('err1').textContent='Está demorando para ler o vídeo. Se nada acontecer, o celular pode não conseguir abrir esse formato. Tente um vídeo mp4 comum.'},8000);
+  v.onloadedmetadata=()=>{clearTimeout(slow);$('err1').textContent='';
     file=f;dur=v.duration;vw=v.videoWidth;vh=v.videoHeight;out=null;
     $('res3').hidden=true;$('status').textContent='';$('bar').hidden=true;
     $('info').hidden=false;
@@ -165,7 +168,7 @@ function setFile(f){
     $('info').querySelector('b').textContent=f.name;
     $('adj').hidden=false;plan();
   };
-  v.onerror=()=>{$('err1').textContent='Este navegador não conseguiu ler o vídeo. Tente no Chrome ou no Edge.'};
+  v.onerror=()=>{clearTimeout(slow);$('err1').textContent='Este navegador não conseguiu abrir o vídeo. Vídeos gravados em HEVC podem não abrir. Tente no Chrome, ou envie um mp4 comum.'};
 }
 
 /* plano: bitrate de vídeo para caber no tamanho máximo */
@@ -197,7 +200,8 @@ $('go').onclick=async()=>{
   busy=true;$('go').disabled=true;out=null;$('res3').hidden=true;
   const p=calc();const bar=$('bar');bar.hidden=false;bar.value=0;$('status').className='msg';
   const v=document.createElement('video');v.src=URL.createObjectURL(file);v.playsInline=true;v.preload='auto';
-  let raf,tick;
+  let raf,tick,wake=null;
+  try{ if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen') }catch(_){}
   try{
     await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=()=>no(new Error('Arquivo ilegível neste navegador.'))});
     const ac=new (window.AudioContext||window.webkitAudioContext)();
@@ -226,9 +230,10 @@ $('go').onclick=async()=>{
     $('verdict').textContent=ok?'O vídeo ficou abaixo de '+p.target+' MB.':'O vídeo passou de '+p.target+' MB. Diminua o tamanho máximo em uns 15% ou a resolução e comprima de novo.';
     $('verdict').className='msg '+(ok?'ok':'err');
     if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(out);$('preview').src=previewUrl;
-    $('res3').hidden=false;$('status').textContent='Pronto.';$('status').className='msg ok';
+    $('res3').hidden=false;$('status').textContent='Pronto! O vídeo comprimido está no Passo 3, logo abaixo, com o botão Salvar.';$('status').className='msg ok';
     $('res3').scrollIntoView({behavior:'smooth',block:'start'});
   }catch(e){clearInterval(tick);cancelAnimationFrame(raf);$('status').textContent=e.message||'Não foi possível comprimir o vídeo.';$('status').className='msg err'}
+  try{wake&&wake.release()}catch(_){}
   busy=false;$('go').disabled=false;
 };
 
