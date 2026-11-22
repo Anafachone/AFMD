@@ -4,17 +4,11 @@
 <style>
 /* Layout: estrutura do Tracker Semanal (cabeçalho em destaque, cartões planos com borda fina, botões com contorno escuro) na paleta lavanda azulada AFMD. */
 :root{
-  --bg:#f4f6fc; --card:#ffffff; --hero:#c9d4f4; --lav-100:#e8ecfa; --lav-300:#bcc8ee; --lav-600:#4f64b8;
+  --bg:#f4f3ef; --card:#ffffff; --hero:#c9d4f4; --lav-100:#e8ecfa; --lav-300:#bcc8ee; --lav-600:#4f64b8;
   --ink:#16263e; --on-ink:#f4f6fc; --muted:#4d5880; --line:#d3daee; --ok:#2d7a57; --okbg:#d8ecde; --err:#a8383f;
-  --shadow-card:0 1px 3px rgba(0,0,0,.05),0 1px 1px rgba(0,0,0,.03);
+  color-scheme:light; --shadow-card:0 1px 3px rgba(0,0,0,.05),0 1px 1px rgba(0,0,0,.03);
   --font-serif:'Libre Baskerville',Georgia,serif; --font-sans:'Montserrat',system-ui,sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#151a2e; --card:#1d2440; --hero:#2f3b70; --lav-100:#26305a; --lav-300:#4a5d9c; --lav-600:#a9bcf2;
-  --ink:#e9ecf8; --on-ink:#151a2e; --muted:#a4adcc; --line:#34406a; --ok:#6fcf9f; --okbg:#1f3d33; --err:#f08a90; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#151a2e; --card:#1d2440; --hero:#2f3b70; --lav-100:#26305a; --lav-300:#4a5d9c; --lav-600:#a9bcf2;
-  --ink:#e9ecf8; --on-ink:#151a2e; --muted:#a4adcc; --line:#34406a; --ok:#6fcf9f; --okbg:#1f3d33; --err:#f08a90; color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--font-sans);
   padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-block:20px 80px}
