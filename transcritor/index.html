@@ -1,0 +1,260 @@
+<title>AFMD Transcritor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Montserrat:wght@400;500;600&display=swap">
+<style>
+/* Layout: coluna única em 3 etapas (preparar, transcrever, copiar). Identidade AFMD: Libre Caslon Text + Montserrat, lavanda e azul. */
+:root{
+  --bg:#f6f4fb; --surface:#ffffff; --lav-100:#ece7f8; --lav-300:#c9bdea; --lav-600:#7461b8;
+  --blue-600:#3b5bb5; --navy:#20304b; --muted:#5f6683; --line:#d9d3ea; --ok:#2d7a57; --err:#a8383f;
+  --on-accent:#ffffff;
+  --font-display:'Libre Caslon Text',Georgia,serif; --font-body:'Montserrat',Arial,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#171a2b; --surface:#20243b; --lav-100:#2c2a4a; --lav-300:#5a4f94; --lav-600:#b7a8ee;
+  --blue-600:#7e9bf0; --navy:#eceaf7; --muted:#a6abc7; --line:#363b5c; --ok:#6fcf9f; --err:#f08a90; --on-accent:#14172a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171a2b; --surface:#20243b; --lav-100:#2c2a4a; --lav-300:#5a4f94; --lav-600:#b7a8ee;
+  --blue-600:#7e9bf0; --navy:#eceaf7; --muted:#a6abc7; --line:#363b5c; --ok:#6fcf9f; --err:#f08a90; --on-accent:#14172a; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);font:15px/1.6 var(--font-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 56px}
+main{max-width:860px;margin:0 auto;display:grid;gap:24px}
+header{display:grid;gap:6px}
+.eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--lav-600);font-weight:600}
+h1{font:700 clamp(30px,5vw,44px)/1.15 var(--font-display);margin:0;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:60ch}
+section{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:16px;min-width:0}
+h2{font:700 21px/1.3 var(--font-display);margin:0;display:flex;gap:10px;align-items:baseline}
+h2 small{font:600 11px var(--font-body);letter-spacing:.18em;text-transform:uppercase;color:var(--lav-600)}
+.drop{border:2px dashed var(--lav-300);background:var(--lav-100);border-radius:var(--r);padding:32px 18px;text-align:center;cursor:pointer;display:grid;gap:6px}
+.drop.over{border-color:var(--blue-600)}
+.drop strong{font:700 18px var(--font-display)}
+.drop span{color:var(--muted);font-size:13px}
+.file{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px;color:var(--muted)}
+.file b{color:var(--navy);font-weight:600}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.mode{border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:4px;cursor:pointer;background:var(--surface)}
+.mode:has(input:checked){border-color:var(--blue-600);background:var(--lav-100)}
+.mode input{accent-color:var(--blue-600);margin-right:8px}
+.mode strong{font-weight:600}
+.mode span{font-size:12.5px;color:var(--muted)}
+label.sel{display:grid;gap:6px;font-size:13px;font-weight:600}
+select,textarea,button{font:inherit;color:inherit}
+select{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);max-width:320px}
+button{border:1px solid var(--line);background:var(--surface);padding:11px 18px;border-radius:8px;cursor:pointer;font-weight:600}
+button.primary{background:var(--blue-600);border-color:var(--blue-600);color:var(--on-accent)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,select:focus-visible,textarea:focus-visible,.drop:focus-visible{outline:3px solid var(--lav-600);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+progress{width:100%;height:10px;accent-color:var(--blue-600)}
+.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stat{background:var(--lav-100);border-radius:8px;padding:12px;display:grid;gap:2px}
+.stat span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.stat b{font:700 22px var(--font-display);font-variant-numeric:tabular-nums}
+.msg{font-size:13px;color:var(--muted)} .msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+ol.steps{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--muted);font-size:14px}
+ol.steps b{color:var(--navy)}
+.prompt{background:var(--lav-100);border-radius:8px;padding:12px 14px;font-size:14px;overflow-wrap:anywhere}
+textarea{width:100%;min-height:260px;padding:14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);line-height:1.8;resize:vertical}
+.meta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pick{display:flex;gap:8px;flex-wrap:wrap}
+.pick button{padding:7px 12px;font-size:12.5px}
+.pick button[aria-pressed="true"]{background:var(--lav-100);border-color:var(--blue-600)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<main>
+  <header>
+    <div class="eyebrow">AFMD</div>
+    <h1>Transcritor de áudio e vídeo</h1>
+    <p>Reduza o arquivo, envie ao Claude para transcrever e copie o texto pronto para colar em outro lugar.</p>
+  </header>
+
+  <section aria-labelledby="s1">
+    <h2 id="s1"><small>Etapa 1</small>Preparar o arquivo</h2>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher arquivo mp3, mp4 ou mov">
+      <strong>Solte o arquivo aqui ou clique para escolher</strong>
+      <span>mp3, mp4 ou mov</span>
+    </div>
+    <input id="file" type="file" accept=".mp3,.mp4,.mov,audio/mpeg,video/mp4,video/quicktime" hidden>
+    <div class="file" id="info" hidden></div>
+    <video id="probe" playsinline preload="metadata" hidden></video>
+
+    <div id="tools" hidden style="display:grid;gap:16px">
+      <div class="modes" role="radiogroup" aria-label="Tipo de redução">
+        <label class="mode"><span style="color:var(--navy)"><input type="radio" name="mode" value="audio" checked><strong>Somente áudio</strong></span><span>Menor tamanho e suficiente para transcrever. Salva em webm (Opus).</span></label>
+        <label class="mode"><span style="color:var(--navy)"><input type="radio" name="mode" value="video"><strong>Vídeo reduzido</strong></span><span>Mantém a imagem com resolução e qualidade menores. Salva em webm.</span></label>
+      </div>
+      <div class="row" style="align-items:end;gap:18px">
+        <label class="sel" id="qwrap">Qualidade
+          <select id="quality">
+            <option value="24000">Menor tamanho (24 kbps)</option>
+            <option value="48000" selected>Equilibrada (48 kbps)</option>
+            <option value="96000">Melhor qualidade (96 kbps)</option>
+          </select>
+        </label>
+        <label class="sel" id="rwrap" hidden>Resolução
+          <select id="res">
+            <option value="360">360p</option>
+            <option value="480" selected>480p</option>
+            <option value="720">720p</option>
+          </select>
+        </label>
+        <button class="primary" id="go">Reduzir arquivo</button>
+      </div>
+      <p class="msg">A redução roda no seu navegador e leva o tempo de duração do arquivo. Mantenha esta aba aberta e visível.</p>
+      <progress id="bar" max="1" value="0" hidden></progress>
+      <div class="msg" id="status" role="status"></div>
+      <div class="result" id="result" hidden>
+        <div class="stat"><span>Original</span><b id="mbBefore">-</b></div>
+        <div class="stat"><span>Reduzido</span><b id="mbAfter">-</b></div>
+        <div class="stat"><span>Economia</span><b id="mbSaved">-</b></div>
+      </div>
+      <div class="row"><button id="save" hidden>Salvar arquivo reduzido</button></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="s2">
+    <h2 id="s2"><small>Etapa 2</small>Transcrever com o Claude</h2>
+    <ol class="steps">
+      <li>Anexe o arquivo (original ou reduzido) na conversa com o Claude.</li>
+      <li>Envie esta instrução: <div class="prompt" id="prompt">Transcreva este arquivo em português e coloque o texto no meu Transcritor AFMD.</div></li>
+      <li>Quando o Claude terminar, o texto aparece na etapa 3.</li>
+    </ol>
+    <div class="row"><button id="copyPrompt">Copiar instrução</button><span class="msg" id="pmsg"></span></div>
+  </section>
+
+  <section aria-labelledby="s3">
+    <h2 id="s3"><small>Etapa 3</small>Texto transcrito</h2>
+    <div class="pick" id="pick" hidden></div>
+    <label class="sel" for="text">Transcrição (você também pode colar ou editar aqui)</label>
+    <textarea id="text" placeholder="A transcrição aparece aqui."></textarea>
+    <div class="row">
+      <button class="primary" id="copy">Copiar texto</button>
+      <button id="clear">Limpar</button>
+      <span class="meta" id="count">0 palavras</span>
+      <span class="msg" id="cmsg" role="status"></span>
+    </div>
+  </section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmtMB=b=>(b/1048576).toFixed(b<10485760?2:1)+' MB';
+const fmtT=s=>{s=Math.round(s);const m=Math.floor(s/60);return m+':'+String(s%60).padStart(2,'0')};
+let file=null,out=null,outName='',busy=false;
+
+/* copiar com fallback */
+async function copyText(text,el,msgEl){
+  try{await navigator.clipboard.writeText(text);msgEl.textContent='Copiado.';msgEl.className='msg ok'}
+  catch(e){
+    try{el.focus();el.select&&el.select();const ok=document.execCommand('copy');
+      msgEl.textContent=ok?'Copiado.':'Selecione o texto e use Ctrl+C.';msgEl.className='msg '+(ok?'ok':'err')}
+    catch(_){msgEl.textContent='Selecione o texto e use Ctrl+C.';msgEl.className='msg err'}
+  }
+  setTimeout(()=>{msgEl.textContent=''},3000);
+}
+$('copy').onclick=()=>{ if(!$('text').value.trim()){$('cmsg').textContent='Não há texto para copiar.';$('cmsg').className='msg err';return}
+  copyText($('text').value,$('text'),$('cmsg'))};
+$('copyPrompt').onclick=()=>{const t=document.createElement('textarea');t.value=$('prompt').textContent;document.body.append(t);
+  copyText(t.value,t,$('pmsg')).finally(()=>t.remove())};
+$('clear').onclick=()=>{$('text').value='';upd()};
+const upd=()=>{const w=$('text').value.trim().split(/\s+/).filter(Boolean).length;$('count').textContent=w+(w===1?' palavra':' palavras')};
+$('text').addEventListener('input',upd);
+
+/* escolher arquivo */
+$('drop').onclick=()=>$('file').click();
+$('drop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}};
+['dragover','dragenter'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('over')}));
+$('drop').addEventListener('drop',e=>{if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0])});
+$('file').onchange=e=>{if(e.target.files[0])setFile(e.target.files[0])};
+
+function setFile(f){
+  if(!/\.(mp3|mp4|mov)$/i.test(f.name)){$('info').hidden=false;$('info').innerHTML='<b style="color:var(--err)">Formato não aceito. Use mp3, mp4 ou mov.</b>';return}
+  file=f;out=null;$('save').hidden=true;$('result').hidden=true;$('status').textContent='';$('bar').hidden=true;
+  const v=$('probe');v.src=URL.createObjectURL(f);
+  $('info').hidden=false;$('info').innerHTML=`<span><b>${f.name.replace(/</g,'&lt;')}</b></span><span>${fmtMB(f.size)}</span><span id="dur"></span>`;
+  v.onloadedmetadata=()=>{$('dur').textContent='Duração '+fmtT(v.duration)};
+  v.onerror=()=>{$('status').textContent='Este navegador não conseguiu ler o arquivo. Você ainda pode anexá-lo ao Claude sem reduzir.';$('status').className='msg err'};
+  const isAudio=/\.mp3$/i.test(f.name);
+  if(isAudio)document.querySelector('input[value=video]').disabled=true;
+  document.querySelector('input[value=audio]').checked=true;syncMode();
+  $('tools').hidden=false;
+}
+function syncMode(){const m=document.querySelector('input[name=mode]:checked').value;$('rwrap').hidden=m!=='video'}
+document.querySelectorAll('input[name=mode]').forEach(r=>r.onchange=syncMode);
+
+/* reduzir (gravação em tempo real) */
+$('go').onclick=async()=>{
+  if(!file||busy)return;
+  busy=true;$('go').disabled=true;out=null;$('save').hidden=true;$('result').hidden=true;
+  const mode=document.querySelector('input[name=mode]:checked').value;
+  const abr=+$('quality').value, h=+$('res').value;
+  const v=document.createElement('video');v.src=URL.createObjectURL(file);v.playsInline=true;v.preload='auto';
+  const bar=$('bar');bar.hidden=false;bar.value=0;$('status').className='msg';
+  try{
+    await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=()=>no(new Error('Arquivo ilegível neste navegador.'))});
+    const ac=new (window.AudioContext||window.webkitAudioContext)();
+    const src=ac.createMediaElementSource(v), dest=ac.createMediaStreamDestination();src.connect(dest);
+    const tracks=[...dest.stream.getAudioTracks()];
+    let cv,ctx,raf;
+    if(mode==='video'){
+      const ar=(v.videoWidth||16)/(v.videoHeight||9);cv=document.createElement('canvas');
+      cv.height=h;cv.width=Math.round(h*ar/2)*2;ctx=cv.getContext('2d');
+      tracks.push(...cv.captureStream(30).getVideoTracks());
+    }
+    const stream=new MediaStream(tracks);
+    const types=mode==='video'?['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm']:['audio/webm;codecs=opus','audio/webm'];
+    const mime=types.find(t=>MediaRecorder.isTypeSupported(t));
+    if(!mime)throw new Error('Este navegador não grava webm. Use o Chrome ou o Edge.');
+    const rec=new MediaRecorder(stream,mode==='video'?{mimeType:mime,audioBitsPerSecond:abr/2>64000?64000:Math.max(24000,abr/2),videoBitsPerSecond:{360:350000,480:600000,720:1200000}[h]*(abr/48000)}:{mimeType:mime,audioBitsPerSecond:abr});
+    const chunks=[];rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+    const done=new Promise(r=>rec.onstop=r);
+    const draw=()=>{ctx.drawImage(v,0,0,cv.width,cv.height);raf=requestAnimationFrame(draw)};
+    v.muted=false;v.volume=1;await ac.resume();
+    /* o áudio vai só para o gravador, não para os alto-falantes */
+    rec.start(1000);await v.play();if(ctx)draw();
+    $('status').textContent='Reduzindo... '+fmtT(0)+' de '+fmtT(v.duration);
+    const tick=setInterval(()=>{bar.value=v.currentTime/v.duration;$('status').textContent='Reduzindo... '+fmtT(v.currentTime)+' de '+fmtT(v.duration)},500);
+    await new Promise(r=>v.onended=r);
+    clearInterval(tick);cancelAnimationFrame(raf);rec.stop();await done;ac.close();
+    out=new Blob(chunks,{type:mime.split(';')[0]});
+    outName=file.name.replace(/\.[^.]+$/,'')+(mode==='video'?'-reduzido':'-audio')+'.webm';
+    bar.value=1;
+    const saved=1-out.size/file.size;
+    $('mbBefore').textContent=fmtMB(file.size);$('mbAfter').textContent=fmtMB(out.size);
+    $('mbSaved').textContent=saved>0?Math.round(saved*100)+'%':'0%';
+    $('result').hidden=false;$('save').hidden=false;
+    $('status').textContent=saved>0?'Pronto. Salve o arquivo e anexe ao Claude.':'O arquivo reduzido ficou maior que o original. Use o original ou escolha uma qualidade menor.';
+    $('status').className='msg '+(saved>0?'ok':'err');
+  }catch(e){$('status').textContent=e.message||'Não foi possível reduzir o arquivo.';$('status').className='msg err'}
+  busy=false;$('go').disabled=false;
+};
+$('save').onclick=async()=>{
+  if(!out)return;
+  let d=null;try{d=await claude.use('downloads')}catch(_){}
+  if(d){try{await d.save({filename:outName,data:out});return}catch(e){if(e&&e.code==='declined')return}}
+  $('status').textContent='Salvar direto não está disponível aqui. Abra a página no navegador para baixar.';$('status').className='msg err';
+};
+
+/* transcrições enviadas pelo Claude (opcional, via db) */
+(async()=>{
+  try{
+    const db=await claude.use('db');if(!db)return;
+    const col=db.collection('transcricoes');let docs=[],sel=null;
+    const render=()=>{
+      const p=$('pick');p.hidden=!docs.length;p.innerHTML='';
+      docs.forEach(d=>{const b=document.createElement('button');b.textContent=d.title||d.id;b.setAttribute('aria-pressed',d.id===sel);
+        b.onclick=()=>{sel=d.id;$('text').value=d.text||'';upd();render()};p.append(b)});
+    };
+    col.onSnapshot(s=>{
+      docs=s.docs.filter(x=>x.exists).map(x=>({id:x.id,...x.data()}));
+      docs.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+      if(docs.length&&(sel===null||!$('text').value.trim())){sel=docs[0].id;$('text').value=docs[0].text||'';upd()}
+      render();
+    },()=>{});
+  }catch(_){}
+})();
+</script>
