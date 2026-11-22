@@ -53,3 +53,7 @@ Foco visível de 3px em `--lav-600`, controles com rótulo, animações respeita
 - **Botões**: contorno `--ink`, raio 10px, altura mínima 42px. Primário sólido em `--ink`.
 - **Estatísticas**: cartões brancos com borda fina. A economia usa o fundo `--hero`.
 - **Foco**: contorno de 2px em `--ink`.
+
+## Visual macio
+
+Cantos bem arredondados (cartões 26px, cabeçalho 28px, botões em pílula), sombras suaves em lavanda, bordas claras, cabeçalho em degradê lavanda azulada e botão principal em azul-lavanda `#5a70c2`. O rótulo "AFMD" foi removido do topo da página.
