@@ -123,7 +123,10 @@ textarea{width:100%;min-height:260px;padding:14px;border:1px solid var(--line);b
   </section>
 
   <section aria-labelledby="s2">
-    <h2 id="s2"><small>Etapa 2</small>Transcrever com o Claude</h2>
+    <h2 id="s2"><small>Etapa 2</small>Transcrever</h2>
+    <div class="row"><button class="primary" id="dgo" disabled>Transcrever com Descript</button><span class="msg" id="dmsg" role="status">Escolha um arquivo na etapa 1.</span></div>
+    <div class="msg" id="dfall" hidden>Se o Descript recusar o arquivo por aqui, envie-o direto no <a href="https://web.descript.com" target="_blank" rel="noopener">Descript</a>, copie o texto de lá e cole na etapa 3.</div>
+    <p class="msg">Ou transcreva pelo chat com o Claude:</p>
     <ol class="steps">
       <li>Anexe o arquivo (original ou reduzido) na conversa com o Claude.</li>
       <li>Envie esta instrução: <div class="prompt" id="prompt">Transcreva este arquivo em português e coloque o texto no meu Transcritor AFMD.</div></li>
@@ -189,6 +192,7 @@ function setFile(f){
   if(isAudio)document.querySelector('input[value=video]').disabled=true;
   document.querySelector('input[value=audio]').checked=true;syncMode();
   $('choice').hidden=false;$('tools').hidden=true;$('directMsg').hidden=true;
+  $('dgo').disabled=false;$('dmsg').textContent='Pronto para enviar ao Descript.';$('dmsg').className='msg';$('dfall').hidden=true;
   document.querySelectorAll('#choice button').forEach(b=>b.setAttribute('aria-pressed','false'));
 }
 $('pickCompress').onclick=()=>{$('tools').hidden=false;$('directMsg').hidden=true;
@@ -250,6 +254,56 @@ $('save').onclick=async()=>{
   let d=null;try{d=await claude.use('downloads')}catch(_){}
   if(d){try{await d.save({filename:outName,data:out});return}catch(e){if(e&&e.code==='declined')return}}
   $('status').textContent='Salvar direto não está disponível aqui. Abra a página no navegador para baixar.';$('status').className='msg err';
+};
+
+/* transcrever pelo Descript (tentativa; depende do que o conector aceita) */
+const DMSG=(t,c)=>{$('dmsg').textContent=t;$('dmsg').className='msg '+(c||'')};
+const pick=(o,keys)=>{for(const k of keys){if(o&&o[k]!=null)return o[k]}};
+function findText(p){
+  if(typeof p==='string')return p;
+  const t=pick(p,['transcript','text','content']);
+  if(typeof t==='string')return t;
+  const r=p&&p.result;if(r&&r!==p)return findText(r);
+  return '';
+}
+$('dgo').onclick=async()=>{
+  if(!file)return;
+  $('dgo').disabled=true;$('dfall').hidden=true;
+  try{
+    const mcp=await claude.use('mcp'), assets=await claude.use('assets');
+    if(!mcp)throw {why:'O conector não está disponível nesta visualização.'};
+    if(!assets)throw {why:'Enviar arquivo exige permissão de editor neste artefato.'};
+    const src=out||file;
+    if(src.size>20*1048576)throw {why:'O arquivo passa de 20 MB. Reduza o tamanho na etapa 1 e tente de novo.'};
+    DMSG('Enviando o arquivo...');
+    const up=await assets.upload(src instanceof File?src:new File([src],outName,{type:src.type}));
+    const url=new URL(up.url,location.href).href;
+    DMSG('Pedindo a transcrição ao Descript...');
+    const r1=await mcp.callTool('Descript','transcribe_audio_video',{url,language:'pt',format:'txt'});
+    const p1=r1.payload||{};
+    const job=pick(p1,['job_id','jobId']);
+    if(!job)throw {why:'O Descript não devolveu um código de tarefa.'};
+    let r2,p2={};
+    for(let i=0;i<40;i++){
+      DMSG('Transcrevendo... aguarde ('+(i+1)+')');
+      r2=await mcp.callTool('Descript','wait_for_job',{job_id:job});p2=r2.payload||{};
+      const st=pick(p2,['status','state'])||pick(p2.result||{},['status']);
+      if(st==='success'||st==='completed'||st==='succeeded')break;
+      if(st==='failed'||st==='error'||st==='cancelled')throw {why:'O Descript não conseguiu processar o arquivo.'};
+    }
+    let txt=findText(p2);
+    if(!txt){
+      const args=pick(p1,['transcript_export'])||pick(p2,['transcript_export'])||pick(p2.result||{},['transcript_export']);
+      if(args){const r3=await mcp.callTool('Descript','export_transcript',args);txt=findText(r3.payload||'')||(r3.content||[]).map(b=>b.text||'').join('\n')}
+    }
+    if(!txt.trim())throw {why:'O Descript terminou, mas não devolveu o texto.'};
+    $('text').value=txt.trim();upd();DMSG('Pronto. O texto está na etapa 3.','ok');
+    $('s3').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){
+    DMSG((e&&e.why)||(e&&e.message)||'Não foi possível transcrever por aqui.','err');
+    $('dfall').hidden=false;
+  }
+  $('dgo').disabled=false;
 };
 
 /* transcrições enviadas pelo Claude (opcional, via db) */
