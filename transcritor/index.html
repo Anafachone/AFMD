@@ -4,18 +4,18 @@
 <style>
 /* Layout: coluna única em 3 etapas (preparar, transcrever, copiar). Identidade AFMD: Libre Baskerville + Montserrat, lavanda e azul. */
 :root{
-  --bg:#f6f4fb; --surface:#ffffff; --lav-100:#ece7f8; --lav-300:#c9bdea; --lav-600:#7461b8;
-  --blue-600:#3b5bb5; --navy:#20304b; --muted:#5f6683; --line:#d9d3ea; --ok:#2d7a57; --err:#a8383f;
+  --bg:#f4f6fc; --surface:#ffffff; --lav-100:#e8ecfa; --lav-300:#bcc8ee; --lav-600:#5a70c2;
+  --blue-600:#2f52b0; --navy:#20304b; --muted:#5b6585; --line:#d3daee; --ok:#2d7a57; --err:#a8383f;
   --on-accent:#ffffff;
   --font-display:'Libre Baskerville',Georgia,serif; --font-body:'Montserrat',Arial,sans-serif;
   --r:10px;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#171a2b; --surface:#20243b; --lav-100:#2c2a4a; --lav-300:#5a4f94; --lav-600:#b7a8ee;
-  --blue-600:#7e9bf0; --navy:#eceaf7; --muted:#a6abc7; --line:#363b5c; --ok:#6fcf9f; --err:#f08a90; --on-accent:#14172a; color-scheme:dark}}
+  --bg:#151a2e; --surface:#1d2440; --lav-100:#26305a; --lav-300:#4a5d9c; --lav-600:#a9bcf2;
+  --blue-600:#7e9bf0; --navy:#e9ecf8; --muted:#a4adcc; --line:#34406a; --ok:#6fcf9f; --err:#f08a90; --on-accent:#14172a; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#171a2b; --surface:#20243b; --lav-100:#2c2a4a; --lav-300:#5a4f94; --lav-600:#b7a8ee;
-  --blue-600:#7e9bf0; --navy:#eceaf7; --muted:#a6abc7; --line:#363b5c; --ok:#6fcf9f; --err:#f08a90; --on-accent:#14172a; color-scheme:dark}
+  --bg:#151a2e; --surface:#1d2440; --lav-100:#26305a; --lav-300:#4a5d9c; --lav-600:#a9bcf2;
+  --blue-600:#7e9bf0; --navy:#e9ecf8; --muted:#a4adcc; --line:#34406a; --ok:#6fcf9f; --err:#f08a90; --on-accent:#14172a; color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--navy);font:15px/1.6 var(--font-body);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 56px}
