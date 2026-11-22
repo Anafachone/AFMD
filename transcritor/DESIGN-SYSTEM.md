@@ -45,3 +45,11 @@ Foco visível de 3px em `--lav-600`, controles com rótulo, animações respeita
 ## Código
 
 `index.html` é a página publicada como Artifact no Claude. Nenhum dado sai do navegador na redução do arquivo.
+
+## Estrutura (referência: Tracker Semanal)
+
+- **Cabeçalho em destaque**: bloco `--hero` (lavanda azulada) com borda fina `--ink`, raio 16px, título em Libre Baskerville 400 e um selo branco à direita com o limite em MB.
+- **Cartões**: fundo `--card`, borda `--line`, raio 14px, rótulo "Passo N" em caixa alta com espaçamento.
+- **Botões**: contorno `--ink`, raio 10px, altura mínima 42px. Primário sólido em `--ink`.
+- **Estatísticas**: cartões brancos com borda fina. A economia usa o fundo `--hero`.
+- **Foco**: contorno de 2px em `--ink`.

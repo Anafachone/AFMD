@@ -2,66 +2,88 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;500;600&display=swap">
 <style>
-/* Layout: coluna única, três blocos (arquivo, ajuste, resultado). Identidade AFMD: Libre Baskerville + Montserrat, lavanda azulada e azul. */
+/* Layout: estrutura do Tracker Semanal (cabeçalho em destaque, cartões planos com borda fina, botões com contorno escuro) na paleta lavanda azulada AFMD. */
 :root{
-  --bg:#f4f6fc; --surface:#ffffff; --lav-100:#e8ecfa; --lav-300:#bcc8ee; --lav-600:#5a70c2;
-  --blue-600:#2f52b0; --navy:#20304b; --muted:#5b6585; --line:#d3daee; --ok:#2d7a57; --err:#a8383f;
-  --on-accent:#ffffff;
-  --font-display:'Libre Baskerville',Georgia,serif; --font-body:'Montserrat',Arial,sans-serif;
-  --r:10px;
+  --bg:#f4f6fc; --card:#ffffff; --hero:#c9d4f4; --lav-100:#e8ecfa; --lav-300:#bcc8ee; --lav-600:#4f64b8;
+  --ink:#16263e; --on-ink:#f4f6fc; --muted:#4d5880; --line:#d3daee; --ok:#2d7a57; --okbg:#d8ecde; --err:#a8383f;
+  --shadow-card:0 1px 3px rgba(0,0,0,.05),0 1px 1px rgba(0,0,0,.03);
+  --font-serif:'Libre Baskerville',Georgia,serif; --font-sans:'Montserrat',system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#151a2e; --surface:#1d2440; --lav-100:#26305a; --lav-300:#4a5d9c; --lav-600:#a9bcf2;
-  --blue-600:#7e9bf0; --navy:#e9ecf8; --muted:#a4adcc; --line:#34406a; --ok:#6fcf9f; --err:#f08a90; --on-accent:#14172a; color-scheme:dark}}
+  --bg:#151a2e; --card:#1d2440; --hero:#2f3b70; --lav-100:#26305a; --lav-300:#4a5d9c; --lav-600:#a9bcf2;
+  --ink:#e9ecf8; --on-ink:#151a2e; --muted:#a4adcc; --line:#34406a; --ok:#6fcf9f; --okbg:#1f3d33; --err:#f08a90; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#151a2e; --surface:#1d2440; --lav-100:#26305a; --lav-300:#4a5d9c; --lav-600:#a9bcf2;
-  --blue-600:#7e9bf0; --navy:#e9ecf8; --muted:#a4adcc; --line:#34406a; --ok:#6fcf9f; --err:#f08a90; --on-accent:#14172a; color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--navy);font:15px/1.6 var(--font-body);
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 56px}
-main{max-width:860px;margin:0 auto;display:grid;gap:24px}
-header{display:grid;gap:6px}
-.eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--lav-600);font-weight:600}
-h1{font:700 clamp(28px,5vw,42px)/1.2 var(--font-display);margin:0;text-wrap:balance}
-header p{margin:0;color:var(--muted);max-width:60ch}
-section{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:grid;gap:16px;min-width:0}
-h2{font:700 20px/1.3 var(--font-display);margin:0;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
-h2 small{font:600 11px var(--font-body);letter-spacing:.18em;text-transform:uppercase;color:var(--lav-600)}
-.drop{border:2px dashed var(--lav-300);background:var(--lav-100);border-radius:var(--r);padding:32px 18px;text-align:center;cursor:pointer;display:grid;gap:6px}
-.drop.over{border-color:var(--blue-600)}
-.drop strong{font:700 17px var(--font-display)}
+  --bg:#151a2e; --card:#1d2440; --hero:#2f3b70; --lav-100:#26305a; --lav-300:#4a5d9c; --lav-600:#a9bcf2;
+  --ink:#e9ecf8; --on-ink:#151a2e; --muted:#a4adcc; --line:#34406a; --ok:#6fcf9f; --okbg:#1f3d33; --err:#f08a90; color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--font-sans);
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-block:20px 80px}
+main{max-width:860px;margin:0 auto;display:grid;gap:18px;align-content:start}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+h1,h2{font-family:var(--font-serif);font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(28px,6.4vw,40px);line-height:1.1}
+h2{font-size:20px;line-height:1.2}
+.lab{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.msg{font-size:13px;color:var(--muted)} .msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+
+/* cabeçalho em destaque */
+.hero{display:flex;justify-content:space-between;align-items:center;gap:12px 24px;flex-wrap:wrap;background:var(--hero);border:1px solid var(--ink);border-radius:16px;padding:18px 20px}
+.hero .hd{display:grid;gap:2px;min-width:0}
+.hero .lab{color:var(--ink)}
+.hero p{margin:4px 0 0;font-size:14px;font-weight:500;max-width:46ch}
+.badge{text-align:right;background:var(--card);border:1px solid var(--ink);border-radius:12px;padding:8px 14px}
+.badge b{display:block;font-size:clamp(32px,8vw,44px);font-weight:500;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.badge span{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+
+/* cartões */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;align-content:start;min-width:0;box-shadow:var(--shadow-card)}
+.cardhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+
+.drop{border:1.5px dashed var(--ink);background:var(--lav-100);border-radius:12px;padding:30px 18px;text-align:center;cursor:pointer;display:grid;gap:4px}
+.drop.over{background:var(--hero)}
+.drop strong{font:400 17px var(--font-serif)}
 .drop span{color:var(--muted);font-size:13px}
 .file{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px;color:var(--muted)}
-.file b{color:var(--navy);font-weight:600;overflow-wrap:anywhere}
-label.sel{display:grid;gap:6px;font-size:13px;font-weight:600}
+.file b{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+
+label.sel{display:grid;gap:6px;font-size:12px;font-weight:600;letter-spacing:.04em}
 select,input[type=number],button{font:inherit;color:inherit}
-select,input[type=number]{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);width:100%;max-width:220px}
-button{border:1px solid var(--line);background:var(--surface);padding:11px 18px;border-radius:8px;cursor:pointer;font-weight:600}
-button.primary{background:var(--blue-600);border-color:var(--blue-600);color:var(--on-accent)}
-button:disabled{opacity:.5;cursor:not-allowed}
-button:focus-visible,select:focus-visible,input:focus-visible,.drop:focus-visible{outline:3px solid var(--lav-600);outline-offset:2px}
+select,input[type=number]{padding:9px 12px;min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--card);width:100%;max-width:220px}
+select:focus,input[type=number]:focus{border-color:var(--ink);outline:0}
 .row{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end}
-.plan{background:var(--lav-100);border-radius:8px;padding:12px 14px;font-size:13.5px;display:grid;gap:2px}
+
+/* botões */
+.btn,button{border:1px solid var(--ink);background:transparent;border-radius:10px;font-weight:600;font-size:14px;padding:8px 18px;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+button:hover{background:var(--lav-100)}
+button.primary{background:var(--ink);color:var(--on-ink)}
+button.primary:hover{opacity:.9;background:var(--ink)}
+button:disabled{opacity:.45;cursor:not-allowed}
+
+.plan{background:var(--lav-100);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px;display:grid;gap:2px}
 .plan b{font-variant-numeric:tabular-nums}
-progress{width:100%;height:10px;accent-color:var(--blue-600)}
+progress{width:100%;height:10px;accent-color:var(--lav-600)}
 .result{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.stat{background:var(--lav-100);border-radius:8px;padding:12px;display:grid;gap:2px}
-.stat span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.stat b{font:700 21px var(--font-display);font-variant-numeric:tabular-nums}
-.msg{font-size:13px;color:var(--muted)} .msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
-video{width:100%;max-height:340px;border-radius:8px;background:#000}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:2px}
+.stat.hi{background:var(--hero);border-color:var(--ink)}
+.stat span{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.stat.hi span{color:var(--ink)}
+.stat b{font:400 24px var(--font-serif);font-variant-numeric:tabular-nums}
+video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px solid var(--line)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <main>
-  <header>
-    <div class="eyebrow">AFMD</div>
-    <h1>Compressor de vídeo</h1>
-    <p>Reduza um vídeo mp4 ou mov para menos de 180 MB direto no navegador. O arquivo não sai do seu computador.</p>
+  <header class="hero">
+    <div class="hd">
+      <div class="lab">AFMD</div>
+      <h1>Compressor de vídeo</h1>
+      <p>Reduza um vídeo mp4 ou mov para menos de 180 MB direto no navegador. O arquivo não sai do seu computador.</p>
+    </div>
+    <div class="badge" aria-live="polite"><b id="badgeN">180</b><span>MB no máximo</span></div>
   </header>
 
-  <section aria-labelledby="s1">
-    <h2 id="s1"><small>1</small>Escolher o vídeo</h2>
+  <section class="card" aria-labelledby="s1">
+    <div class="cardhead"><span class="lab">Passo 1</span><h2 id="s1">Escolher o vídeo</h2></div>
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher vídeo mp4 ou mov">
       <strong>Solte o vídeo aqui ou clique para escolher</strong>
       <span>mp4 ou mov</span>
@@ -71,8 +93,8 @@ video{width:100%;max-height:340px;border-radius:8px;background:#000}
     <div class="msg err" id="err1" role="alert"></div>
   </section>
 
-  <section aria-labelledby="s2" id="adj" hidden>
-    <h2 id="s2"><small>2</small>Ajustar e comprimir</h2>
+  <section class="card" aria-labelledby="s2" id="adj" hidden>
+    <div class="cardhead"><span class="lab">Passo 2</span><h2 id="s2">Ajustar e comprimir</h2></div>
     <div class="row">
       <label class="sel" for="target">Tamanho máximo (MB)
         <input id="target" type="number" min="5" max="1000" step="1" value="180">
@@ -93,12 +115,12 @@ video{width:100%;max-height:340px;border-radius:8px;background:#000}
     <div class="msg" id="status" role="status"></div>
   </section>
 
-  <section aria-labelledby="s3" id="res3" hidden>
-    <h2 id="s3"><small>3</small>Resultado</h2>
+  <section class="card" aria-labelledby="s3" id="res3" hidden>
+    <div class="cardhead"><span class="lab">Passo 3</span><h2 id="s3">Resultado</h2></div>
     <div class="result">
       <div class="stat"><span>Original</span><b id="mbBefore">-</b></div>
       <div class="stat"><span>Comprimido</span><b id="mbAfter">-</b></div>
-      <div class="stat"><span>Economia</span><b id="mbSaved">-</b></div>
+      <div class="stat hi"><span>Economia</span><b id="mbSaved">-</b></div>
     </div>
     <div class="msg" id="verdict"></div>
     <video id="preview" controls playsinline></video>
@@ -152,7 +174,7 @@ function calc(){
 }
 function plan(){
   if(!file)return;
-  const p=calc();
+  const p=calc();$('badgeN').textContent=p.target;
   const already=file.size<p.target*MB;
   $('plan').innerHTML=(already?'O vídeo original já tem menos de '+p.target+' MB. Você pode comprimir mesmo assim.<br>':'')+
     'Saída em <b>'+p.w+'×'+p.h+'</b> com cerca de <b>'+(p.video/1e6).toFixed(2)+' Mbps</b> de vídeo.';
