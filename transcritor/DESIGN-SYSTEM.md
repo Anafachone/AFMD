@@ -57,3 +57,7 @@ Foco visível de 3px em `--lav-600`, controles com rótulo, animações respeita
 ## Visual macio (versão móbile, até 720px de largura)
 
 No computador vale a estrutura do Tracker Semanal. No celular o visual fica macio: cantos bem arredondados (cartões 26px, cabeçalho 28px, botões em pílula), sombras suaves em lavanda, bordas claras, cabeçalho em degradê lavanda azulada e botão principal em azul-lavanda `#5a70c2`. O rótulo "AFMD" foi removido do topo da página.
+
+## Alternador Vídeo / PDF
+
+Controle segmentado no topo (`.seg`) troca entre o compressor de vídeo (limite padrão 180 MB) e o de PDF (limite padrão 300 MB). O selo do cabeçalho mostra o limite do modo ativo. O PDF tem dois métodos: reduzir imagens (as páginas viram JPEG) ou manter texto (compressão leve).

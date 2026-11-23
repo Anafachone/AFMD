@@ -1,6 +1,8 @@
 <title>Compressor de Vídeo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <style>
 /* Layout: estrutura do Tracker Semanal (cabeçalho em destaque, cartões planos com borda fina, botões com contorno escuro) na paleta lavanda azulada AFMD. */
 :root{
@@ -27,6 +29,12 @@ h2{font-size:20px;line-height:1.2}
 .badge{text-align:right;background:var(--card);border:1px solid var(--ink);border-radius:12px;padding:6px 12px}
 .badge b{display:block;font-size:clamp(22px,5vw,28px);font-weight:500;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .badge span{font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+
+/* alternar vídeo / PDF */
+.seg{display:inline-flex;gap:4px;padding:4px;background:var(--lav-100);border:1px solid var(--line);border-radius:12px;justify-self:start}
+.seg button{border:0;background:transparent;min-height:38px;padding:6px 20px;border-radius:9px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--card);box-shadow:var(--shadow-card)}
+.panel{display:grid;gap:18px;align-content:start}
 
 /* cartões */
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;align-content:start;min-width:0;box-shadow:var(--shadow-card)}
@@ -71,6 +79,9 @@ video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px 
   .drop{border:2px dashed var(--lav-300);border-radius:22px;padding:34px 18px}
   select,input[type=number]{border:1.5px solid var(--lav-300);border-radius:16px}
   select:focus,input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(90,112,194,.18)}
+  .seg{border-radius:999px}
+  .seg button{border:0;border-radius:999px;min-height:40px;box-shadow:none;background:transparent}
+  .seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 4px 12px -6px rgba(79,100,184,.4)}
   .btn,button{border:1.5px solid var(--lav-300);background:var(--card);border-radius:999px;padding:8px 22px;min-height:46px}
   button.primary{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 8px 18px -8px rgba(90,112,194,.6)}
   button.primary:hover{background:#4a60b0}
@@ -86,12 +97,18 @@ video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px 
 <main>
   <header class="hero">
     <div class="hd">
-      <h1>Compressor de vídeo</h1>
-      <p>Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.</p>
+      <h1 id="heroH">Compressor de vídeo</h1>
+      <p id="heroP">Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.</p>
     </div>
     <div class="badge" aria-live="polite"><b id="badgeN">180</b><span>MB no máximo</span></div>
   </header>
 
+  <div class="seg" role="group" aria-label="Tipo de arquivo">
+    <button id="tabVid" aria-pressed="true">Vídeo</button>
+    <button id="tabPdf" aria-pressed="false">PDF</button>
+  </div>
+
+  <div id="vidPanel" class="panel">
   <section class="card" aria-labelledby="s1">
     <div class="cardhead"><span class="lab">Passo 1</span><h2 id="s1">Escolher o vídeo</h2></div>
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher vídeo mp4 ou mov">
@@ -136,6 +153,57 @@ video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px 
     <video id="preview" controls playsinline></video>
     <div class="row"><button class="primary" id="save">Salvar vídeo comprimido</button><span class="msg" id="smsg" role="status"></span></div>
   </section>
+  </div>
+
+  <div id="pdfPanel" class="panel" hidden>
+    <section class="card" aria-labelledby="p1">
+      <div class="cardhead"><span class="lab">Passo 1</span><h2 id="p1">Escolher o PDF</h2></div>
+      <div class="drop" id="pdrop" tabindex="0" role="button" aria-label="Escolher arquivo PDF">
+        <strong>Solte o PDF aqui ou clique para escolher</strong>
+        <span>pdf</span>
+      </div>
+      <input id="pfile" type="file" accept="application/pdf,.pdf" hidden>
+      <div class="file" id="pinfo" hidden></div>
+      <div class="msg err" id="perr" role="alert"></div>
+    </section>
+
+    <section class="card" aria-labelledby="p2" id="padj" hidden>
+      <div class="cardhead"><span class="lab">Passo 2</span><h2 id="p2">Ajustar e comprimir</h2></div>
+      <div class="row">
+        <label class="sel" for="ptarget">Tamanho máximo (MB)
+          <input id="ptarget" type="number" min="1" max="2000" step="1" value="300">
+        </label>
+        <label class="sel" for="pmethod">Método
+          <select id="pmethod">
+            <option value="raster" selected>Reduzir imagens (o texto vira imagem)</option>
+            <option value="light">Manter texto (compressão leve)</option>
+          </select>
+        </label>
+        <label class="sel" for="pq" id="pqwrap">Qualidade
+          <select id="pq">
+            <option value="bal" selected>Equilibrada</option>
+            <option value="strong">Forte (menor)</option>
+            <option value="min">Mínima (bem menor)</option>
+          </select>
+        </label>
+      </div>
+      <div class="plan" id="pplan" aria-live="polite"></div>
+      <div class="row"><button class="primary" id="pgo">Comprimir PDF</button></div>
+      <progress id="pbar" max="1" value="0" hidden></progress>
+      <div class="msg" id="pstatus" role="status"></div>
+    </section>
+
+    <section class="card" aria-labelledby="p3" id="pres" hidden>
+      <div class="cardhead"><span class="lab">Passo 3</span><h2 id="p3">Resultado</h2></div>
+      <div class="result">
+        <div class="stat"><span>Original</span><b id="pBefore">-</b></div>
+        <div class="stat"><span>Comprimido</span><b id="pAfter">-</b></div>
+        <div class="stat hi"><span>Economia</span><b id="pSaved">-</b></div>
+      </div>
+      <div class="msg" id="pverdict"></div>
+      <div class="row"><button class="primary" id="psave">Salvar PDF comprimido</button><span class="msg" id="psmsg" role="status"></span></div>
+    </section>
+  </div>
 </main>
 
 <script>
@@ -243,5 +311,112 @@ $('save').onclick=async()=>{
   if(!d){$('smsg').textContent='Salvar direto não está disponível aqui. Abra a página no navegador.';$('smsg').className='msg err';return}
   try{await d.save({filename:outName,data:out});$('smsg').textContent='';}
   catch(e){if(e&&e.code!=='declined'){$('smsg').textContent='Não foi possível salvar. Tente de novo.';$('smsg').className='msg err'}}
+};
+
+/* ---------- alternar vídeo / PDF ---------- */
+function setMode(m){
+  const pdf=m==='pdf';
+  $('vidPanel').hidden=pdf;$('pdfPanel').hidden=!pdf;
+  $('tabVid').setAttribute('aria-pressed',String(!pdf));$('tabPdf').setAttribute('aria-pressed',String(pdf));
+  $('heroH').textContent=pdf?'Compressor de PDF':'Compressor de vídeo';
+  $('heroP').textContent=pdf?'Reduza um PDF para até 300 MB, direto no navegador. O arquivo não sai do seu computador.':'Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.';
+  $('badgeN').textContent=pdf?(+$('ptarget').value||300):(+$('target').value||180);
+}
+$('tabVid').onclick=()=>setMode('vid');$('tabPdf').onclick=()=>setMode('pdf');
+
+/* ---------- PDF ---------- */
+let pFile=null,pPages=0,pOut=null,pName='',pBusy=false;
+const QUAL={bal:{scale:1.5,q:.7},strong:{scale:1.2,q:.55},min:{scale:1,q:.4}};
+const libsOk=()=>window.pdfjsLib&&window.PDFLib;
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+$('pdrop').onclick=()=>$('pfile').click();
+$('pdrop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('pfile').click()}};
+['dragover','dragenter'].forEach(ev=>$('pdrop').addEventListener(ev,e=>{e.preventDefault();$('pdrop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('pdrop').addEventListener(ev,e=>{e.preventDefault();$('pdrop').classList.remove('over')}));
+$('pdrop').addEventListener('drop',e=>{if(e.dataTransfer.files[0])setPdf(e.dataTransfer.files[0])});
+$('pfile').onchange=e=>{if(e.target.files[0])setPdf(e.target.files[0])};
+
+async function setPdf(f){
+  $('perr').textContent='';
+  if(!(/\.pdf$/i.test(f.name)||f.type==='application/pdf')){$('perr').textContent='Formato não aceito. Use um arquivo PDF.';return}
+  if(!libsOk()){$('perr').textContent='Não foi possível carregar as ferramentas de PDF. Verifique a conexão e recarregue a página.';return}
+  $('perr').textContent='Lendo o PDF...';
+  try{
+    const doc=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;
+    pPages=doc.numPages;doc.destroy();
+  }catch(e){$('perr').textContent=(e&&e.name==='PasswordException')?'Este PDF tem senha. Remova a senha e tente de novo.':'Não foi possível abrir este PDF. Ele pode estar danificado.';return}
+  $('perr').textContent='';pFile=f;pOut=null;$('pres').hidden=true;$('pstatus').textContent='';$('pbar').hidden=true;
+  $('pinfo').hidden=false;$('pinfo').innerHTML='<span><b></b></span><span>'+fmtMB(f.size)+'</span><span>'+pPages+(pPages===1?' página':' páginas')+'</span>';
+  $('pinfo').querySelector('b').textContent=f.name;
+  $('padj').hidden=false;pPlan();
+}
+function pPlan(){
+  if(!pFile)return;
+  const t=Math.max(1,+$('ptarget').value||300);$('badgeN').textContent=t;
+  $('pqwrap').hidden=$('pmethod').value!=='raster';
+  const already=pFile.size<t*MB;
+  $('pplan').innerHTML=(already?'O PDF original já tem menos de '+t+' MB. Você pode comprimir mesmo assim.<br>':'')+
+    ($('pmethod').value==='raster'?'As páginas viram imagens JPEG: o texto deixa de ser selecionável, mas o tamanho cai bastante.':'O texto continua selecionável. A redução costuma ser pequena.');
+}
+$('ptarget').oninput=pPlan;$('pmethod').onchange=pPlan;
+
+$('pgo').onclick=async()=>{
+  if(!pFile||pBusy)return;
+  if(!libsOk()){$('pstatus').textContent='Ferramentas de PDF indisponíveis. Recarregue a página.';$('pstatus').className='msg err';return}
+  pBusy=true;$('pgo').disabled=true;pOut=null;$('pres').hidden=true;
+  const bar=$('pbar');bar.hidden=false;bar.value=0;$('pstatus').className='msg';
+  const t=Math.max(1,+$('ptarget').value||300);
+  let wake=null;try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen')}catch(_){}
+  try{
+    const ab=await pFile.arrayBuffer();let bytes;
+    if($('pmethod').value==='light'){
+      $('pstatus').textContent='Otimizando o PDF...';
+      const src=await PDFLib.PDFDocument.load(ab,{ignoreEncryption:true,updateMetadata:false});
+      const nd=await PDFLib.PDFDocument.create();
+      const pgs=await nd.copyPages(src,src.getPageIndices());pgs.forEach(p=>nd.addPage(p));
+      bytes=await nd.save({useObjectStreams:true});bar.value=1;
+    }else{
+      const {scale,q}=QUAL[$('pq').value];
+      const doc=await pdfjsLib.getDocument({data:new Uint8Array(ab)}).promise;
+      const nd=await PDFLib.PDFDocument.create();
+      for(let i=1;i<=doc.numPages;i++){
+        $('pstatus').textContent='Comprimindo página '+i+' de '+doc.numPages+'...';
+        const pg=await doc.getPage(i);const base=pg.getViewport({scale:1});
+        const sc=Math.min(scale,4096/Math.max(base.width,base.height));
+        const vp=pg.getViewport({scale:sc});
+        const cv=document.createElement('canvas');cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);
+        const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);
+        await pg.render({canvasContext:ctx,viewport:vp}).promise;
+        const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',q));
+        const img=await nd.embedJpg(new Uint8Array(await blob.arrayBuffer()));
+        const np=nd.addPage([base.width,base.height]);np.drawImage(img,{x:0,y:0,width:base.width,height:base.height});
+        cv.width=cv.height=0;pg.cleanup();bar.value=i/doc.numPages;
+      }
+      doc.destroy();
+      $('pstatus').textContent='Montando o PDF final...';
+      bytes=await nd.save({useObjectStreams:true});
+    }
+    pOut=new Blob([bytes],{type:'application/pdf'});
+    pName=pFile.name.replace(/\.[^.]+$/,'')+'-comprimido.pdf';
+    const saved=1-pOut.size/pFile.size;
+    $('pBefore').textContent=fmtMB(pFile.size);$('pAfter').textContent=fmtMB(pOut.size);
+    $('pSaved').textContent=saved>0?Math.round(saved*100)+'%':'0%';
+    const ok=pOut.size<=t*MB;
+    $('pverdict').textContent=pOut.size>=pFile.size?'O PDF comprimido ficou maior que o original. Use o original ou escolha uma qualidade menor.':
+      ok?'O PDF ficou com até '+t+' MB.':'O PDF passou de '+t+' MB. Escolha a qualidade Forte ou Mínima e comprima de novo.';
+    $('pverdict').className='msg '+(ok&&pOut.size<pFile.size?'ok':'err');
+    $('pres').hidden=false;$('pstatus').textContent='Pronto! O PDF comprimido está no Passo 3, logo abaixo, com o botão Salvar.';$('pstatus').className='msg ok';
+    $('pres').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){$('pstatus').textContent=(e&&e.message)?'Não foi possível comprimir o PDF: '+e.message:'Não foi possível comprimir o PDF.';$('pstatus').className='msg err'}
+  try{wake&&wake.release()}catch(_){}
+  pBusy=false;$('pgo').disabled=false;
+};
+$('psave').onclick=async()=>{
+  if(!pOut)return;
+  let d=null;try{d=await claude.use('downloads')}catch(_){}
+  if(!d){$('psmsg').textContent='Salvar direto não está disponível aqui. Abra a página no navegador.';$('psmsg').className='msg err';return}
+  try{await d.save({filename:pName,data:pOut});$('psmsg').textContent=''}
+  catch(e){if(e&&e.code!=='declined'){$('psmsg').textContent='Não foi possível salvar. Tente de novo.';$('psmsg').className='msg err'}}
 };
 </script>
