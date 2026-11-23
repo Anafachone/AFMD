@@ -34,6 +34,8 @@ h2{font-size:20px;line-height:1.2}
 .seg{display:inline-flex;gap:4px;padding:4px;background:var(--lav-100);border:1px solid var(--line);border-radius:12px;justify-self:start}
 .seg button{border:0;background:transparent;min-height:38px;padding:6px 20px;border-radius:9px;font-weight:600}
 .seg button[aria-pressed="true"]{background:var(--card);box-shadow:var(--shadow-card)}
+.presets button{min-height:38px;padding:6px 14px;font-size:13px}
+.presets button[aria-pressed="true"]{background:var(--lav-100);border-color:var(--ink)}
 .panel{display:grid;gap:18px;align-content:start}
 
 /* cartões */
@@ -134,6 +136,11 @@ video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px 
           <option value="480">Até 480p</option>
         </select>
       </label>
+    </div>
+    <div class="row presets" role="group" aria-label="Tamanhos rápidos">
+      <button type="button" data-mb="16">16 MB (WhatsApp)</button>
+      <button type="button" data-mb="50">50 MB</button>
+      <button type="button" data-mb="180">180 MB</button>
     </div>
     <div class="plan" id="plan" aria-live="polite"></div>
     <div class="row"><button class="primary" id="go">Comprimir vídeo</button></div>
@@ -256,11 +263,13 @@ function calc(){
 function plan(){
   if(!file)return;
   const p=calc();$('badgeN').textContent=p.target;
+  document.querySelectorAll('[data-mb]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.mb===p.target)));
   const already=file.size<p.target*MB;
   $('plan').innerHTML=(already?'O vídeo original já tem menos de '+p.target+' MB. Você pode comprimir mesmo assim.<br>':'')+
-    'Saída em <b>'+p.w+'×'+p.h+'</b> com cerca de <b>'+(p.video/1e6).toFixed(2)+' Mbps</b> de vídeo.';
+    'Saída em <b>'+p.w+'×'+p.h+'</b> com cerca de <b>'+(p.video/1e6).toFixed(2)+' Mbps</b> de vídeo.'+(p.target<=16&&dur>600?'<br>Vídeo longo para 16 MB: a qualidade da imagem fica bem baixa.':'');
 }
 $('target').oninput=plan;$('res').onchange=plan;
+document.querySelectorAll('[data-mb]').forEach(b=>b.onclick=()=>{$('target').value=b.dataset.mb;plan()});
 
 /* comprimir (regravação em tempo real) */
 $('go').onclick=async()=>{
