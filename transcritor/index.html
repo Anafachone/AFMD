@@ -26,9 +26,9 @@ h2{font-size:20px;line-height:1.2}
 .hero{display:flex;justify-content:space-between;align-items:center;gap:12px 24px;flex-wrap:wrap;background:var(--hero);border:1px solid var(--ink);border-radius:16px;padding:18px 20px}
 .hero .hd{display:grid;gap:2px;min-width:0}
 .hero p{margin:4px 0 0;font-size:14px;font-weight:500;max-width:46ch}
-.badge{text-align:right;background:var(--card);border:1px solid var(--ink);border-radius:12px;padding:6px 12px}
-.badge b{display:block;font-size:clamp(22px,5vw,28px);font-weight:500;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-.badge span{font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.badge{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:96px;text-align:center;background:var(--card);border:1px solid var(--ink);border-radius:12px;padding:8px 14px}
+.badge b{display:block;text-align:center;font-size:clamp(22px,5vw,28px);font-weight:500;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.badge span{display:block;text-align:center;white-space:nowrap;font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--muted)}
 
 /* alternar vídeo / PDF */
 .seg{display:inline-flex;gap:4px;padding:4px;background:var(--lav-100);border:1px solid var(--line);border-radius:12px;justify-self:start}
