@@ -61,3 +61,7 @@ No computador vale a estrutura do Tracker Semanal. No celular o visual fica maci
 ## Alternador Vídeo / PDF
 
 Controle segmentado no topo (`.seg`) troca entre o compressor de vídeo (limite padrão 180 MB) e o de PDF (limite padrão 300 MB). O selo do cabeçalho mostra o limite do modo ativo. O PDF tem dois métodos: reduzir imagens (as páginas viram JPEG) ou manter texto (compressão leve).
+
+## Saída de vídeo
+
+O vídeo é codificado com WebCodecs em MP4 H.264 + AAC, com tempos exatos de imagem e áudio, o formato que o WhatsApp aceita. Se o navegador não tiver esses codificadores, a página usa o plano B (gravação em tempo real) e avisa que o resultado pode travar no WhatsApp.
