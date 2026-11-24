@@ -1,4 +1,4 @@
-<title>Compressor de Vídeo</title>
+<title>TRANSFILES</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;500;600&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
@@ -39,6 +39,13 @@ h2{font-size:20px;line-height:1.2}
 .seg button[aria-pressed="true"]{background:var(--card);box-shadow:var(--shadow-card)}
 .presets button{min-height:38px;padding:6px 14px;font-size:13px}
 .presets button[aria-pressed="true"]{background:var(--lav-100);border-color:var(--ink)}
+[hidden]{display:none!important}
+.tools{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end}
+.seg{flex-wrap:wrap}
+.flist{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.flist li{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--lav-100);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13px;min-width:0}
+.flist li span{overflow-wrap:anywhere}
+.flist button{min-height:30px;padding:2px 10px;font-size:12px}
 .panel{display:grid;gap:18px;align-content:start}
 
 /* cartões */
@@ -53,9 +60,9 @@ h2{font-size:20px;line-height:1.2}
 .file b{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
 
 label.sel{display:grid;gap:6px;font-size:12px;font-weight:600;letter-spacing:.04em}
-select,input[type=number],button{font:inherit;color:inherit}
-select,input[type=number]{padding:9px 12px;min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--card);width:100%;max-width:220px}
-select:focus,input[type=number]:focus{border-color:var(--ink);outline:0}
+select,input[type=number],input[type=text],button{font:inherit;color:inherit}
+select,input[type=number],input[type=text]{padding:9px 12px;min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--card);width:100%;max-width:220px}
+select:focus,input[type=number],input[type=text]:focus{border-color:var(--ink);outline:0}
 .row{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end}
 
 /* botões */
@@ -82,8 +89,8 @@ video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px 
   .badge{text-align:center;border:1px solid var(--lav-300);border-radius:20px;padding:8px 14px;box-shadow:0 6px 16px -8px rgba(79,100,184,.35)}
   .card{border:1px solid var(--soft);border-radius:26px;padding:22px}
   .drop{border:2px dashed var(--lav-300);border-radius:22px;padding:34px 18px}
-  select,input[type=number]{border:1.5px solid var(--lav-300);border-radius:16px}
-  select:focus,input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(90,112,194,.18)}
+  select,input[type=number],input[type=text]{border:1.5px solid var(--lav-300);border-radius:16px}
+  select:focus,input[type=number],input[type=text]:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(90,112,194,.18)}
   .seg{border-radius:999px}
   .seg button{border:0;border-radius:999px;min-height:40px;box-shadow:none;background:transparent}
   .seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 4px 12px -6px rgba(79,100,184,.4)}
@@ -102,16 +109,23 @@ video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px 
 <main>
   <header class="hero">
     <div class="hd">
-      <h1 id="heroH">Compressor de vídeo</h1>
+      <h1 id="heroH">TRANSFILES</h1>
       <p id="heroP">Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.</p>
     </div>
     <div class="badge" aria-live="polite"><b id="badgeN">180</b><span>MB no máximo</span></div>
   </header>
 
-  <div class="seg" role="group" aria-label="Tipo de arquivo">
-    <button id="tabVid" aria-pressed="true">Vídeo</button>
-    <button id="tabPdf" aria-pressed="false">PDF</button>
-    <button id="tabConv" aria-pressed="false">Word ⇄ PDF</button>
+  <div class="tools">
+    <div class="seg" role="group" aria-label="Tipo de arquivo">
+      <button id="tab_vid" aria-pressed="true">Vídeo</button>
+      <button id="tab_aud" aria-pressed="false">Áudio</button>
+      <button id="tab_img" aria-pressed="false">Imagens</button>
+      <button id="tab_pdf" aria-pressed="false">PDF</button>
+      <button id="tab_doc" aria-pressed="false">Word ⇄ PDF</button>
+    </div>
+    <label class="sel" for="toolSel">Ferramenta
+      <select id="toolSel"></select>
+    </label>
   </div>
 
   <div id="vidPanel" class="panel">
@@ -246,6 +260,33 @@ video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px 
       <div class="row"><button class="primary" id="csave" hidden>Salvar arquivo convertido</button><span class="msg" id="csmsg" role="status"></span></div>
     </section>
   </div>
+
+  <div id="genPanel" class="panel" hidden>
+    <section class="card" aria-labelledby="gTitle">
+      <div class="cardhead"><span class="lab">Passo 1</span><h2 id="gTitle">Ferramenta</h2></div>
+      <div class="drop" id="gdrop" tabindex="0" role="button" aria-label="Escolher arquivos">
+        <strong>Solte os arquivos aqui ou clique para escolher</strong>
+        <span id="gHint"></span>
+      </div>
+      <input id="gfile" type="file" hidden>
+      <ul class="flist" id="glist"></ul>
+      <div class="msg err" id="gerr" role="alert"></div>
+    </section>
+    <section class="card" aria-labelledby="gT2" id="gAdj" hidden>
+      <div class="cardhead"><span class="lab">Passo 2</span><h2 id="gT2">Ajustar e executar</h2></div>
+      <div class="row" id="gopts"></div>
+      <div class="plan" id="gnote"></div>
+      <div class="row"><button class="primary" id="ggo">Executar</button></div>
+      <progress id="gbar" max="1" value="0" hidden></progress>
+      <div class="msg" id="gstatus" role="status"></div>
+      <div class="result" id="gres" hidden>
+        <div class="stat"><span>Original</span><b id="gBefore">-</b></div>
+        <div class="stat hi"><span>Resultado</span><b id="gAfter">-</b></div>
+      </div>
+      <div class="msg" id="gwarn"></div>
+      <div class="row"><button class="primary" id="gsave" hidden>Salvar resultado</button><span class="msg" id="gsmsg" role="status"></span></div>
+    </section>
+  </div>
 </main>
 
 <script>
@@ -308,10 +349,11 @@ document.querySelectorAll('[data-mb]').forEach(b=>b.onclick=()=>{$('target').val
 
 /* ---------- codificador MP4 (H.264 + AAC), compatível com WhatsApp ---------- */
 const CODECS=()=>window.AFMD_CODECS||{v:'avc1.640028',vm:'avc',a:'mp4a.40.2',am:'aac'};
-async function encodeMp4(file,v,p,prog){
+async function encodeMp4(file,v,p,prog,range){
   const C=CODECS();
   if(!(window.VideoEncoder&&window.AudioEncoder&&window.VideoFrame&&window.AudioData&&window.Mp4Muxer&&v.requestVideoFrameCallback))return null;
   const fps=30,SR=48000;
+  const t0=range?range.start:0,t1=range?range.end:v.duration;
   const vcfg={codec:C.v,width:p.w,height:p.h,bitrate:Math.round(p.video),framerate:fps,latencyMode:'quality'};
   if(!(await VideoEncoder.isConfigSupported(vcfg)).supported)return null;
   /* áudio: decodifica inteiro, com taxa fixa, e codifica com timestamps exatos */
@@ -331,28 +373,30 @@ async function encodeMp4(file,v,p,prog){
   const venc=new VideoEncoder({output:(c,m)=>muxer.addVideoChunk(c,m),error:e=>{err=e}});venc.configure(vcfg);
   let aenc=null;
   if(pcm){aenc=new AudioEncoder({output:(c,m)=>muxer.addAudioChunk(c,m),error:e=>{err=e}});aenc.configure(acfg)}
-  let aPos=0;
+  const s0=pcm?Math.floor(t0*SR):0,s1=pcm?Math.min(pcm[0].length,Math.floor(t1*SR)):0;let aPos=s0;
   const feedAudio=sec=>{
-    if(!aenc)return;const end=Math.min(pcm[0].length,Math.floor(sec*SR));
+    if(!aenc)return;const end=Math.min(s1,Math.floor(sec*SR));
     while(aPos<end){
       const n=Math.min(8192,end-aPos),data=new Float32Array(n*ch);
       for(let c=0;c<ch;c++)data.set(pcm[c].subarray(aPos,aPos+n),c*n);
-      const ad=new AudioData({format:'f32-planar',sampleRate:SR,numberOfFrames:n,numberOfChannels:ch,timestamp:Math.round(aPos/SR*1e6),data});
+      const ad=new AudioData({format:'f32-planar',sampleRate:SR,numberOfFrames:n,numberOfChannels:ch,timestamp:Math.round((aPos-s0)/SR*1e6),data});
       aenc.encode(ad);ad.close();aPos+=n;
     }
   };
   const cv=document.createElement('canvas');cv.width=p.w;cv.height=p.h;const ctx=cv.getContext('2d');
-  let n=0,last=-1;
+  if(t0>0){await new Promise(r=>{v.onseeked=r;v.currentTime=t0})}
+  let n=0,last=t0-1;
   await new Promise((resolve,reject)=>{
     const onFrame=(now,meta)=>{
       if(err){reject(err);return}
       const t=meta.mediaTime;
-      if(t>last+1/(fps*1.5)&&venc.encodeQueueSize<30){
+      if(t>=t1-0.001){v.pause();resolve();return}
+      if(t>=t0-0.001&&t>last+1/(fps*1.5)&&venc.encodeQueueSize<30){
         ctx.drawImage(v,0,0,p.w,p.h);
-        const f=new VideoFrame(cv,{timestamp:Math.round(t*1e6),duration:Math.round(1e6/fps)});
+        const f=new VideoFrame(cv,{timestamp:Math.round(Math.max(0,t-t0)*1e6),duration:Math.round(1e6/fps)});
         venc.encode(f,{keyFrame:n%(fps*2)===0});f.close();n++;last=t;
       }
-      feedAudio(t+0.5);prog(t,v.duration);
+      feedAudio(t+0.5);prog(Math.max(0,t-t0),t1-t0);
       if(!v.ended)v.requestVideoFrameCallback(onFrame);
     };
     v.onended=()=>resolve();
@@ -430,16 +474,7 @@ $('save').onclick=async()=>{
 };
 
 /* ---------- alternar vídeo / PDF ---------- */
-function setMode(m){
-  const pdf=m==='pdf',conv=m==='conv';
-  $('vidPanel').hidden=m!=='vid';$('pdfPanel').hidden=!pdf;$('convPanel').hidden=!conv;
-  $('tabVid').setAttribute('aria-pressed',String(m==='vid'));$('tabPdf').setAttribute('aria-pressed',String(pdf));$('tabConv').setAttribute('aria-pressed',String(conv));
-  $('heroH').textContent=conv?'Word e PDF':pdf?'Compressor de PDF':'Compressor de vídeo';
-  $('heroP').textContent=conv?'Converta Word em PDF e PDF em Word, direto no navegador. O arquivo não sai do seu computador.':pdf?'Reduza um PDF para até 300 MB, direto no navegador. O arquivo não sai do seu computador.':'Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.';
-  document.querySelector('.badge').hidden=conv;
-  $('badgeN').textContent=pdf?(+$('ptarget').value||300):(+$('target').value||180);
-}
-$('tabVid').onclick=()=>setMode('vid');$('tabPdf').onclick=()=>setMode('pdf');$('tabConv').onclick=()=>setMode('conv');
+
 
 /* ---------- PDF ---------- */
 let pFile=null,pPages=0,pOut=null,pName='',pBusy=false;
@@ -681,4 +716,240 @@ $('csave').onclick=async()=>{
   try{await d.save({filename:cName,data:cOut});$('csmsg').textContent=''}
   catch(e){if(e&&e.code!=='declined'){$('csmsg').textContent='Não foi possível salvar. Tente de novo.';$('csmsg').className='msg err'}}
 };
+
+/* ============ TRANSFILES: navegação e ferramentas ============ */
+const TOOLS_BY_CAT={
+  vid:[['vid_compress','Comprimir vídeo'],['vid_cut','Cortar ou converter para MP4']],
+  aud:[['aud_conv','Extrair, cortar ou converter áudio']],
+  img:[['img_conv','Converter, comprimir e redimensionar']],
+  pdf:[['pdf_compress','Comprimir PDF'],['pdf_merge','Juntar PDFs'],['pdf_split','Dividir PDF'],['pdf_extract','Extrair páginas'],['pdf_rotate','Girar páginas']],
+  doc:[['doc_conv','Word ⇄ PDF']]
+};
+const HERO={
+  vid_compress:'Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.',
+  vid_cut:'Corte um trecho ou converta qualquer vídeo para MP4 (H.264 e AAC), o formato que abre em qualquer lugar.',
+  aud_conv:'Tire o áudio de um vídeo, corte um trecho ou converta um áudio, sem sair do navegador.',
+  img_conv:'Converta entre JPG, PNG e WebP, comprima e redimensione fotos. Você escolhe a qualidade.',
+  pdf_compress:'Reduza um PDF para até 300 MB, direto no navegador. O arquivo não sai do seu computador.',
+  pdf_merge:'Una vários PDFs em um só. As páginas são copiadas sem recompressão, então o texto e a qualidade ficam iguais.',
+  pdf_split:'Divida um PDF em vários arquivos. As páginas são copiadas sem recompressão.',
+  pdf_extract:'Extraia só as páginas que você quer em um novo PDF, sem perder qualidade.',
+  pdf_rotate:'Gire todas ou algumas páginas do PDF sem recomprimir nada.',
+  doc_conv:'Converta Word em PDF e PDF em Word, direto no navegador. O arquivo não sai do seu computador.'
+};
+let cat='vid',curTool='vid_compress';
+function setCat(c){
+  cat=c;
+  Object.keys(TOOLS_BY_CAT).forEach(k=>$('tab_'+k).setAttribute('aria-pressed',String(k===c)));
+  $('toolSel').innerHTML=TOOLS_BY_CAT[c].map(([id,t])=>'<option value="'+id+'">'+t+'</option>').join('');
+  $('toolSel').parentElement.hidden=TOOLS_BY_CAT[c].length<2;
+  setTool(TOOLS_BY_CAT[c][0][0]);
+}
+function setTool(id){
+  curTool=id;$('toolSel').value=id;
+  const legacy={vid_compress:'vidPanel',pdf_compress:'pdfPanel',doc_conv:'convPanel'};
+  ['vidPanel','pdfPanel','convPanel','genPanel'].forEach(p=>$(p).hidden=true);
+  $(legacy[id]||'genPanel').hidden=false;
+  $('heroP').textContent=HERO[id];
+  const showBadge=id==='vid_compress'||id==='pdf_compress';
+  document.querySelector('.badge').hidden=!showBadge;
+  if(id==='vid_compress')$('badgeN').textContent=+$('target').value||180;
+  if(id==='pdf_compress')$('badgeN').textContent=+$('ptarget').value||300;
+  if(!legacy[id])renderTool(id);
+}
+Object.keys(TOOLS_BY_CAT).forEach(k=>$('tab_'+k).onclick=()=>setCat(k));
+$('toolSel').onchange=()=>setTool($('toolSel').value);
+
+/* ---------- utilidades ---------- */
+function parseTime(str,def){
+  const t=String(str||'').trim();if(!t)return def;
+  const parts=t.split(':').map(Number);if(parts.some(x=>!isFinite(x)||x<0))throw new Error('Tempo inválido: "'+t+'". Use segundos (90) ou minutos:segundos (1:30).');
+  return parts.reduce((a,x)=>a*60+x,0);
+}
+function parseRanges(str,max){
+  const out=[];
+  String(str).split(',').map(x=>x.trim()).filter(Boolean).forEach(part=>{
+    const m=part.match(/^(\d*)\s*-\s*(\d*)$/);
+    if(m){const a=m[1]?+m[1]:1,b=m[2]?+m[2]:max;if(a<1||b>max||a>b)throw new Error('Intervalo inválido: '+part+' (o PDF tem '+max+' páginas).');for(let i=a;i<=b;i++)out.push(i-1)}
+    else if(/^\d+$/.test(part)){const n=+part;if(n<1||n>max)throw new Error('A página '+n+' não existe (o PDF tem '+max+' páginas).');out.push(n-1)}
+    else throw new Error('Não entendi "'+part+'". Use algo como 1-3,5.');
+  });
+  if(!out.length)throw new Error('Informe as páginas.');
+  return out;
+}
+const baseName=f=>f.name.replace(/\.[^.]+$/,'');
+async function loadPdf(f){
+  try{return await PDFLib.PDFDocument.load(await f.arrayBuffer())}
+  catch(e){throw new Error(/encrypt/i.test(e.message||'')?'O PDF "'+f.name+'" tem senha. Remova a senha e tente de novo.':'Não foi possível abrir o PDF "'+f.name+'". Ele pode estar danificado.')}
+}
+async function zipOf(files){const z=new JSZip();files.forEach(f=>z.file(f.name,f.blob));return await z.generateAsync({type:'blob',mimeType:'application/zip'})}
+const pdfNote='Atenção: assinaturas digitais do PDF deixam de valer quando o arquivo é alterado. Formulários e marcadores podem não ser mantidos.';
+
+/* ---------- definição das ferramentas ---------- */
+const SEL=(id,label,opts,def)=>({id,label,type:'select',opts,def});
+const TXT=(id,label,ph,def)=>({id,label,type:'text',ph,def});
+const NUM=(id,label,ph,def,attrs)=>({id,label,type:'number',ph,def,attrs});
+const TOOLS={
+  vid_cut:{title:'Cortar ou converter vídeo',hint:'mp4, mov, webm',accept:'video/*,.mp4,.mov,.m4v,.webm',multiple:false,
+    opts:[TXT('start','Início (opcional)','0:00',''),TXT('end','Fim (opcional)','1:30',''),SEL('q','Qualidade',[['alta','Alta (arquivo maior)'],['boa','Boa (equilibrada)']],'alta')],
+    note:'Deixe início e fim vazios para só converter para MP4. O vídeo é regravado em tempo real, com qualidade alta para não estragar a imagem.',
+    async run(files,o,ui){
+      const f=files[0],v=document.createElement('video');v.src=URL.createObjectURL(f);v.playsInline=true;v.preload='auto';
+      await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=()=>no(new Error('Este navegador não conseguiu abrir o vídeo.'))});
+      const s=parseTime(o.start,0),e=parseTime(o.end,v.duration);
+      if(s>=v.duration||e<=s)throw new Error('O trecho é inválido. O vídeo tem '+fmtT(v.duration)+'.');
+      const hh=Math.min(v.videoHeight,1080),h=Math.round(hh/2)*2,w=Math.round(h*(v.videoWidth/v.videoHeight)/2)*2;
+      const bpp=o.q==='alta'?0.1:0.065,video=Math.max(1.2e6,Math.min(16e6,w*h*30*bpp));
+      const blob=await encodeMp4(f,v,{w,h,video},(t,d)=>ui.prog(t/d,'Processando '+fmtT(t)+' de '+fmtT(d)),{start:s,end:Math.min(e,v.duration)});
+      if(!blob)throw new Error('Este navegador não gera MP4 com H.264 e AAC. Use o Chrome ou o Edge atualizado.');
+      return {blob,name:baseName(f)+(s>0||e<v.duration?'-corte':'-convertido')+'.mp4'};
+    }},
+  aud_conv:{title:'Extrair, cortar ou converter áudio',hint:'áudio ou vídeo: mp3, wav, m4a, mp4, mov, webm',accept:'audio/*,video/*,.mp3,.wav,.m4a,.mp4,.mov,.webm,.ogg',multiple:false,
+    opts:[TXT('start','Início (opcional)','0:00',''),TXT('end','Fim (opcional)','1:30',''),SEL('br','Qualidade',[['64000','Voz (64 kbps)'],['128000','Boa (128 kbps)'],['192000','Alta (192 kbps)']],'128000')],
+    note:'O áudio sai em um arquivo MP4 só de áudio (AAC), que abre no celular, no WhatsApp e no computador. A conversão é rápida e não depende do tempo do áudio.',
+    async run(files,o,ui){
+      if(!(window.AudioEncoder&&window.AudioData&&window.Mp4Muxer))throw new Error('Este navegador não gera áudio MP4. Use o Chrome ou o Edge atualizado.');
+      const f=files[0],SR=48000;ui.status('Lendo o áudio...');
+      let buf;try{const ac=new AudioContext({sampleRate:SR});buf=await ac.decodeAudioData(await f.arrayBuffer());ac.close()}catch(_){throw new Error('Não foi possível ler o áudio deste arquivo.')}
+      const s=parseTime(o.start,0),e=Math.min(parseTime(o.end,buf.duration),buf.duration);
+      if(s>=buf.duration||e<=s)throw new Error('O trecho é inválido. O áudio tem '+fmtT(buf.duration)+'.');
+      const ch=Math.min(2,buf.numberOfChannels),pcm=[];for(let c=0;c<ch;c++)pcm.push(buf.getChannelData(c));
+      const C=CODECS();let codec=C.a,mc=C.am;const br=+o.br;
+      if(!(await AudioEncoder.isConfigSupported({codec,sampleRate:SR,numberOfChannels:ch,bitrate:br})).supported)throw new Error('Este navegador não tem o codificador de áudio AAC. Use o Chrome ou o Edge atualizado.');
+      const target=new Mp4Muxer.ArrayBufferTarget(),muxer=new Mp4Muxer.Muxer({target,audio:{codec:mc,numberOfChannels:ch,sampleRate:SR},fastStart:'in-memory',firstTimestampBehavior:'offset'});
+      let err=null;const enc=new AudioEncoder({output:(c,m)=>muxer.addAudioChunk(c,m),error:x=>{err=x}});enc.configure({codec,sampleRate:SR,numberOfChannels:ch,bitrate:br});
+      const s0=Math.floor(s*SR),s1=Math.floor(e*SR);let pos=s0;
+      while(pos<s1){
+        const n=Math.min(8192,s1-pos),data=new Float32Array(n*ch);
+        for(let c=0;c<ch;c++)data.set(pcm[c].subarray(pos,pos+n),c*n);
+        const ad=new AudioData({format:'f32-planar',sampleRate:SR,numberOfFrames:n,numberOfChannels:ch,timestamp:Math.round((pos-s0)/SR*1e6),data});enc.encode(ad);ad.close();pos+=n;
+        if(err)throw err;if(((pos-s0)/8192|0)%50===0){ui.prog((pos-s0)/(s1-s0),'Processando...');await new Promise(r=>setTimeout(r))}
+      }
+      await enc.flush();if(err)throw err;muxer.finalize();
+      return {blob:new Blob([target.buffer],{type:'video/mp4'}),name:baseName(f)+'-audio.mp4'};
+    }},
+  img_conv:{title:'Converter, comprimir e redimensionar imagens',hint:'jpg, png, webp (vários de uma vez)',accept:'image/*,.jpg,.jpeg,.png,.webp',multiple:true,
+    opts:[SEL('fmt','Formato',[['keep','Manter o formato'],['jpg','JPG'],['png','PNG (sem perdas)'],['webp','WebP']],'keep'),
+      NUM('q','Qualidade (1 a 100)','',90,'min="1" max="100" step="1"'),NUM('maxw','Largura máxima em px (opcional)','Ex: 1920','','min="16" step="1"')],
+    note:'Qualidade 90 a 100 não mostra perda visível. PNG não usa o campo de qualidade. Ao converter, os dados da câmera (EXIF) e a posição GPS são removidos. Com mais de um arquivo, o resultado vem em um ZIP.',
+    async run(files,o,ui){
+      const out=[],q=Math.min(100,Math.max(1,+o.q||90))/100,maxw=+o.maxw||0;
+      for(let i=0;i<files.length;i++){
+        const f=files[i];ui.prog(i/files.length,'Processando '+(i+1)+' de '+files.length+'...');
+        let bmp;try{bmp=await createImageBitmap(f)}catch(_){throw new Error('Não foi possível abrir a imagem "'+f.name+'". Use JPG, PNG ou WebP.')}
+        let w=bmp.width,h=bmp.height;if(maxw&&w>maxw){h=Math.round(h*maxw/w);w=maxw}
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;const ctx=cv.getContext('2d');
+        const mime0={jpg:'image/jpeg',png:'image/png',webp:'image/webp'}[o.fmt]||(/jpe?g/i.test(f.type)?'image/jpeg':/webp/i.test(f.type)?'image/webp':'image/png');
+        if(mime0==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h)}
+        ctx.imageSmoothingQuality='high';ctx.drawImage(bmp,0,0,w,h);bmp.close&&bmp.close();
+        const blob=await new Promise(r=>cv.toBlob(r,mime0,mime0==='image/png'?undefined:q));
+        if(!blob)throw new Error('Este navegador não consegue gerar '+mime0.split('/')[1].toUpperCase()+'.');
+        const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[blob.type]||'png';
+        out.push({name:baseName(f)+'.'+ext,blob});
+      }
+      if(out.length===1)return {blob:out[0].blob,name:out[0].name,};
+      const names={};out.forEach(x=>{if(names[x.name]){x.name=x.name.replace(/(\.\w+)$/,'-'+(++names[x.name])+'$1')}else names[x.name]=1});
+      return {blob:await zipOf(out),name:'imagens.zip'};
+    }},
+  pdf_merge:{title:'Juntar PDFs',hint:'escolha 2 ou mais PDFs, na ordem em que devem ficar',accept:'application/pdf,.pdf',multiple:true,min:2,opts:[],
+    note:'As páginas são copiadas sem recompressão. A ordem é a da lista. '+pdfNote,
+    async run(files,o,ui){
+      const out=await PDFLib.PDFDocument.create();
+      for(let i=0;i<files.length;i++){ui.prog(i/files.length,'Juntando '+(i+1)+' de '+files.length+'...');
+        const src=await loadPdf(files[i]);(await out.copyPages(src,src.getPageIndices())).forEach(p=>out.addPage(p))}
+      return {blob:new Blob([await out.save({useObjectStreams:true})],{type:'application/pdf'}),name:'pdfs-unidos.pdf'};
+    }},
+  pdf_split:{title:'Dividir PDF',hint:'um PDF',accept:'application/pdf,.pdf',multiple:false,
+    opts:[SEL('mode','Dividir em',[['each','Uma página por arquivo'],['groups','Grupos de páginas']],'each'),TXT('groups','Grupos (separe com ponto e vírgula)','Ex: 1-3; 4-6; 7-','')],
+    note:'Em "Grupos de páginas", cada grupo vira um arquivo (ex: 1-3; 4-6; 7-). O resultado vem em um ZIP. '+pdfNote,
+    async run(files,o,ui){
+      const f=files[0],src=await loadPdf(f),total=src.getPageCount();
+      const groups=o.mode==='each'?src.getPageIndices().map(i=>[i]):String(o.groups).split(';').map(x=>x.trim()).filter(Boolean).map(g=>parseRanges(g,total));
+      if(!groups.length)throw new Error('Informe os grupos de páginas, por exemplo 1-3; 4-6.');
+      const out=[],pad=String(groups.length).length;
+      for(let i=0;i<groups.length;i++){ui.prog(i/groups.length,'Criando arquivo '+(i+1)+' de '+groups.length+'...');
+        const d=await PDFLib.PDFDocument.create();(await d.copyPages(src,groups[i])).forEach(p=>d.addPage(p));
+        out.push({name:baseName(f)+'-parte-'+String(i+1).padStart(pad,'0')+'.pdf',blob:new Blob([await d.save({useObjectStreams:true})],{type:'application/pdf'})})}
+      return {blob:await zipOf(out),name:baseName(f)+'-dividido.zip'};
+    }},
+  pdf_extract:{title:'Extrair páginas',hint:'um PDF',accept:'application/pdf,.pdf',multiple:false,
+    opts:[TXT('pages','Páginas a extrair','Ex: 1-3,5,8-','')],
+    note:'Use vírgulas e traços (1-3,5,8-). As páginas saem na ordem em que você escrever. '+pdfNote,
+    async run(files,o,ui){
+      const f=files[0],src=await loadPdf(f),idx=parseRanges(o.pages,src.getPageCount());
+      const d=await PDFLib.PDFDocument.create();(await d.copyPages(src,idx)).forEach(p=>d.addPage(p));
+      return {blob:new Blob([await d.save({useObjectStreams:true})],{type:'application/pdf'}),name:baseName(f)+'-extraido.pdf'};
+    }},
+  pdf_rotate:{title:'Girar páginas',hint:'um PDF',accept:'application/pdf,.pdf',multiple:false,
+    opts:[SEL('angle','Girar',[['90','90° para a direita'],['180','180°'],['270','90° para a esquerda']],'90'),TXT('pages','Páginas (vazio = todas)','Ex: 2,4-6','')],
+    note:'O PDF original é mantido, só a rotação das páginas muda. '+pdfNote,
+    async run(files,o,ui){
+      const f=files[0],doc=await loadPdf(f),total=doc.getPageCount();
+      const idx=String(o.pages).trim()?parseRanges(o.pages,total):doc.getPageIndices();
+      idx.forEach(i=>{const pg=doc.getPage(i);pg.setRotation(PDFLib.degrees((pg.getRotation().angle+ +o.angle)%360))});
+      return {blob:new Blob([await doc.save({useObjectStreams:true})],{type:'application/pdf'}),name:baseName(f)+'-girado.pdf'};
+    }}
+};
+
+/* ---------- painel genérico ---------- */
+let gFiles=[],gOut=null,gName='',gBusy=false;
+const optVal=()=>{const o={};(TOOLS[curTool].opts||[]).forEach(x=>{o[x.id]=$('go_'+x.id).value});return o};
+function renderTool(id){
+  const T=TOOLS[id];gFiles=[];gOut=null;
+  $('gTitle').textContent=T.title;$('gHint').textContent=T.hint;$('gfile').accept=T.accept;$('gfile').multiple=!!T.multiple;
+  $('gopts').innerHTML=(T.opts||[]).map(o=>o.type==='select'
+    ?'<label class="sel" for="go_'+o.id+'">'+o.label+'<select id="go_'+o.id+'">'+o.opts.map(([v,t])=>'<option value="'+v+'"'+(o.def===v?' selected':'')+'>'+t+'</option>').join('')+'</select></label>'
+    :'<label class="sel" for="go_'+o.id+'">'+o.label+'<input id="go_'+o.id+'" type="'+o.type+'" placeholder="'+(o.ph||'')+'" value="'+(o.def==null?'':o.def)+'" '+(o.attrs||'')+'></label>').join('');
+  $('gnote').textContent=T.note||'';$('gnote').hidden=!T.note;
+  $('ggo').textContent={vid_cut:'Processar vídeo',aud_conv:'Gerar áudio',img_conv:'Converter imagens',pdf_merge:'Juntar PDFs',pdf_split:'Dividir PDF',pdf_extract:'Extrair páginas',pdf_rotate:'Girar páginas'}[id]||'Executar';
+  drawList();$('gerr').textContent='';$('gstatus').textContent='';$('gres').hidden=true;$('gsave').hidden=true;$('gbar').hidden=true;$('gwarn').textContent='';
+}
+function drawList(){
+  const T=TOOLS[curTool];
+  $('glist').innerHTML='';
+  gFiles.forEach((f,i)=>{const li=document.createElement('li');const sp=document.createElement('span');sp.textContent=f.name+' ('+fmtMB(f.size)+')';
+    const b=document.createElement('button');b.textContent='Remover';b.onclick=()=>{gFiles.splice(i,1);drawList()};li.append(sp,b);$('glist').append(li)});
+  $('gAdj').hidden=!gFiles.length||gFiles.length<(T.min||1);
+  if(gFiles.length&&gFiles.length<(T.min||1))$('gerr').textContent='Escolha pelo menos '+T.min+' arquivos.';else if($('gerr').textContent.startsWith('Escolha pelo menos'))$('gerr').textContent='';
+}
+function addFiles(list){
+  const T=TOOLS[curTool];$('gerr').textContent='';
+  let arr=[...list];
+  if(!T.multiple)gFiles=[];
+  gFiles=gFiles.concat(arr);gOut=null;$('gres').hidden=true;$('gsave').hidden=true;$('gstatus').textContent='';
+  drawList();
+}
+$('gdrop').onclick=()=>$('gfile').click();
+$('gdrop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('gfile').click()}};
+['dragover','dragenter'].forEach(ev=>$('gdrop').addEventListener(ev,e=>{e.preventDefault();$('gdrop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('gdrop').addEventListener(ev,e=>{e.preventDefault();$('gdrop').classList.remove('over')}));
+$('gdrop').addEventListener('drop',e=>{if(e.dataTransfer.files.length)addFiles(e.dataTransfer.files)});
+$('gfile').onchange=e=>{if(e.target.files.length)addFiles(e.target.files);e.target.value=''};
+$('ggo').onclick=async()=>{
+  if(gBusy)return;const T=TOOLS[curTool];if(!gFiles.length)return;
+  gBusy=true;$('ggo').disabled=true;gOut=null;$('gres').hidden=true;$('gsave').hidden=true;$('gerr').textContent='';$('gwarn').textContent='';$('gstatus').className='msg';
+  const bar=$('gbar');bar.hidden=false;bar.value=0;
+  const ui={prog:(f,t)=>{bar.value=Math.min(1,f);if(t)$('gstatus').textContent=t},status:t=>{$('gstatus').textContent=t}};
+  let wake=null;try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen')}catch(_){}
+  try{
+    if(!window.PDFLib&&/^pdf_/.test(curTool))throw new Error('As ferramentas de PDF não carregaram. Recarregue a página.');
+    if(/^pdf_|^img_conv$/.test(curTool)&&/^pdf_/.test(curTool)&&gFiles.some(f=>!(/\.pdf$/i.test(f.name)||f.type==='application/pdf')))throw new Error('Use apenas arquivos PDF.');
+    const r=await T.run(gFiles,optVal(),ui);
+    gOut=r.blob;gName=r.name;bar.value=1;
+    $('gBefore').textContent=fmtMB(gFiles.reduce((a,f)=>a+f.size,0));$('gAfter').textContent=fmtMB(gOut.size);
+    $('gres').hidden=false;$('gsave').hidden=false;
+    if(/^pdf_/.test(curTool))$('gwarn').textContent=pdfNote;
+    $('gstatus').textContent='Pronto! Salve o resultado abaixo.';$('gstatus').className='msg ok';
+    $('gsave').scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(e){$('gstatus').textContent=(e&&e.message)||'Não foi possível concluir.';$('gstatus').className='msg err'}
+  try{wake&&wake.release()}catch(_){}
+  gBusy=false;$('ggo').disabled=false;
+};
+$('gsave').onclick=async()=>{
+  if(!gOut)return;let d=null;try{d=await claude.use('downloads')}catch(_){}
+  if(!d){$('gsmsg').textContent='Salvar direto não está disponível aqui. Abra a página no navegador.';$('gsmsg').className='msg err';return}
+  try{await d.save({filename:gName,data:gOut});$('gsmsg').textContent=''}
+  catch(e){if(e&&e.code!=='declined'){$('gsmsg').textContent='Não foi possível salvar. Tente de novo.';$('gsmsg').className='msg err'}}
+};
+setCat('vid');
 </script>

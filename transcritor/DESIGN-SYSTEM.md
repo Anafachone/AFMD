@@ -1,4 +1,4 @@
-# AFMD Transcritor: design system
+# TRANSFILES: design system
 
 Identidade AFMD em lavanda azulada (tom periwinkle, sem roxo) e azul. Tipografia: Libre Baskerville nos títulos e Montserrat no corpo.
 
@@ -69,3 +69,17 @@ O vídeo é codificado com WebCodecs em MP4 H.264 + AAC, com tempos exatos de im
 ## Aba Word ⇄ PDF
 
 Terceira opção do alternador. Converte .docx em PDF (texto selecionável, com títulos, listas, negrito, itálico e tabelas simples em texto) e PDF em .docx (apenas texto, em parágrafos). Imagens, cabeçalhos, rodapés, colunas e a posição exata na página não são preservados. O selo de limite de MB fica oculto nessa aba.
+
+## TRANSFILES: ferramentas
+
+Navegação em duas camadas: categorias (alternador `.seg`: Vídeo, Áudio, Imagens, PDF, Word ⇄ PDF) e seletor "Ferramenta" dentro da categoria. Ferramentas novas usam o painel genérico (`#genPanel`): passo 1 escolhe os arquivos, passo 2 mostra as opções, o resultado e o botão Salvar.
+
+| Categoria | Ferramentas |
+|-----------|-------------|
+| Vídeo | Comprimir (limite padrão 180 MB), cortar ou converter para MP4 |
+| Áudio | Extrair, cortar ou converter (saída em MP4 só de áudio, AAC) |
+| Imagens | Converter entre JPG, PNG e WebP, comprimir e redimensionar (vários arquivos viram ZIP) |
+| PDF | Comprimir (limite padrão 300 MB), juntar, dividir (ZIP), extrair páginas, girar |
+| Word ⇄ PDF | Word (.docx) para PDF e PDF para Word (só texto) |
+
+Qualidade e legitimidade: juntar, dividir, extrair e girar PDF copiam as páginas sem recompressão. Qualquer alteração em PDF invalida assinaturas digitais, e a página avisa isso. Imagens convertidas perdem os dados EXIF. Tudo roda no navegador, sem enviar arquivos.
