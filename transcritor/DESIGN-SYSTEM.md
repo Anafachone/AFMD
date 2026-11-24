@@ -83,3 +83,11 @@ Navegação em duas camadas: categorias (alternador `.seg`: Vídeo, Áudio, Imag
 | Word ⇄ PDF | Word (.docx) para PDF e PDF para Word (só texto) |
 
 Qualidade e legitimidade: juntar, dividir, extrair e girar PDF copiam as páginas sem recompressão. Qualquer alteração em PDF invalida assinaturas digitais, e a página avisa isso. Imagens convertidas perdem os dados EXIF. Tudo roda no navegador, sem enviar arquivos.
+
+## Identidade visual AFMD (versão atual)
+
+- **Estrutura:** barra lateral azul-marinho `#20304b` no computador, com o nome TRANSFILES em Libre Baskerville espaçado em dourado `#b49a68`, filete dourado e ícones de linha. No celular a barra vira um topo com abas roláveis.
+- **Área de trabalho:** fundo creme `#f4f3ef`, cartões brancos com borda fina e sombra suave, filete dourado sob o título da página.
+- **Ferramentas da categoria:** chips em pílula, o ativo em azul-marinho (no celular, azul-lavanda).
+- **Lavanda azulada:** só em destaques (área de soltar arquivo, estatística de economia, cabeçalho no celular).
+- **Botão principal:** azul-marinho no computador, azul-lavanda no celular. Foco em dourado no computador.
