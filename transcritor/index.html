@@ -1,8 +1,10 @@
 <title>Compressor de Vídeo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;500;600&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js"></script>
 <style>
 /* Layout: estrutura do Tracker Semanal (cabeçalho em destaque, cartões planos com borda fina, botões com contorno escuro) na paleta lavanda azulada AFMD. */
@@ -109,6 +111,7 @@ video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px 
   <div class="seg" role="group" aria-label="Tipo de arquivo">
     <button id="tabVid" aria-pressed="true">Vídeo</button>
     <button id="tabPdf" aria-pressed="false">PDF</button>
+    <button id="tabConv" aria-pressed="false">Word ⇄ PDF</button>
   </div>
 
   <div id="vidPanel" class="panel">
@@ -210,6 +213,37 @@ video{width:100%;max-height:340px;border-radius:12px;background:#000;border:1px 
       </div>
       <div class="msg" id="pverdict"></div>
       <div class="row"><button class="primary" id="psave">Salvar PDF comprimido</button><span class="msg" id="psmsg" role="status"></span></div>
+    </section>
+  </div>
+
+  <div id="convPanel" class="panel" hidden>
+    <section class="card" aria-labelledby="c1">
+      <div class="cardhead"><span class="lab">Passo 1</span><h2 id="c1">Escolher a conversão</h2></div>
+      <label class="sel" for="cdir">Converter
+        <select id="cdir">
+          <option value="w2p" selected>Word (.docx) para PDF</option>
+          <option value="p2w">PDF para Word (.docx)</option>
+        </select>
+      </label>
+      <div class="drop" id="cdrop" tabindex="0" role="button" aria-label="Escolher arquivo para converter">
+        <strong>Solte o arquivo aqui ou clique para escolher</strong>
+        <span id="cdropHint">docx</span>
+      </div>
+      <input id="cfile" type="file" accept=".docx" hidden>
+      <div class="file" id="cinfo" hidden></div>
+      <div class="msg err" id="cerr" role="alert"></div>
+      <div class="plan" id="cnote"></div>
+    </section>
+
+    <section class="card" aria-labelledby="c2" id="cgoCard" hidden>
+      <div class="cardhead"><span class="lab">Passo 2</span><h2 id="c2">Converter e salvar</h2></div>
+      <div class="row"><button class="primary" id="cgo">Converter</button></div>
+      <div class="msg" id="cstatus" role="status"></div>
+      <div class="result" id="cres" hidden>
+        <div class="stat"><span>Original</span><b id="cBefore">-</b></div>
+        <div class="stat hi"><span>Convertido</span><b id="cAfter">-</b></div>
+      </div>
+      <div class="row"><button class="primary" id="csave" hidden>Salvar arquivo convertido</button><span class="msg" id="csmsg" role="status"></span></div>
     </section>
   </div>
 </main>
@@ -397,20 +431,21 @@ $('save').onclick=async()=>{
 
 /* ---------- alternar vídeo / PDF ---------- */
 function setMode(m){
-  const pdf=m==='pdf';
-  $('vidPanel').hidden=pdf;$('pdfPanel').hidden=!pdf;
-  $('tabVid').setAttribute('aria-pressed',String(!pdf));$('tabPdf').setAttribute('aria-pressed',String(pdf));
-  $('heroH').textContent=pdf?'Compressor de PDF':'Compressor de vídeo';
-  $('heroP').textContent=pdf?'Reduza um PDF para até 300 MB, direto no navegador. O arquivo não sai do seu computador.':'Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.';
+  const pdf=m==='pdf',conv=m==='conv';
+  $('vidPanel').hidden=m!=='vid';$('pdfPanel').hidden=!pdf;$('convPanel').hidden=!conv;
+  $('tabVid').setAttribute('aria-pressed',String(m==='vid'));$('tabPdf').setAttribute('aria-pressed',String(pdf));$('tabConv').setAttribute('aria-pressed',String(conv));
+  $('heroH').textContent=conv?'Word e PDF':pdf?'Compressor de PDF':'Compressor de vídeo';
+  $('heroP').textContent=conv?'Converta Word em PDF e PDF em Word, direto no navegador. O arquivo não sai do seu computador.':pdf?'Reduza um PDF para até 300 MB, direto no navegador. O arquivo não sai do seu computador.':'Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.';
+  document.querySelector('.badge').hidden=conv;
   $('badgeN').textContent=pdf?(+$('ptarget').value||300):(+$('target').value||180);
 }
-$('tabVid').onclick=()=>setMode('vid');$('tabPdf').onclick=()=>setMode('pdf');
+$('tabVid').onclick=()=>setMode('vid');$('tabPdf').onclick=()=>setMode('pdf');$('tabConv').onclick=()=>setMode('conv');
 
 /* ---------- PDF ---------- */
 let pFile=null,pPages=0,pOut=null,pName='',pBusy=false;
 const QUAL={bal:{scale:1.5,q:.7},strong:{scale:1.2,q:.55},min:{scale:1,q:.4}};
 const libsOk=()=>window.pdfjsLib&&window.PDFLib;
-if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
 $('pdrop').onclick=()=>$('pfile').click();
 $('pdrop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('pfile').click()}};
@@ -500,5 +535,150 @@ $('psave').onclick=async()=>{
   if(!d){$('psmsg').textContent='Salvar direto não está disponível aqui. Abra a página no navegador.';$('psmsg').className='msg err';return}
   try{await d.save({filename:pName,data:pOut});$('psmsg').textContent=''}
   catch(e){if(e&&e.code!=='declined'){$('psmsg').textContent='Não foi possível salvar. Tente de novo.';$('psmsg').className='msg err'}}
+};
+
+/* ---------- Word ⇄ PDF ---------- */
+let cFile=null,cOut=null,cName='',cBusy=false;
+const WIN=/[^\x20-\x7E\xA0-\xFF‘’“”–—…•€™]/g;
+const clean=t=>t.replace(/[\u2028\u2029\u200B]/g,' ').replace(WIN,'?');
+function convNote(){
+  const w=$('cdir').value==='w2p';
+  $('cfile').accept=w?'.docx':'.pdf,application/pdf';
+  $('cdropHint').textContent=w?'docx (Word)':'pdf';
+  $('cnote').innerHTML=w?'Entram texto, títulos, listas, negrito, itálico e tabelas simples (cada linha da tabela vira uma linha de texto). Imagens, cabeçalhos, rodapés e fontes especiais não passam. O PDF fica com texto selecionável.':
+    'Só o texto é extraído, em parágrafos. Imagens, tabelas, colunas e a posição na página não passam. PDF escaneado (só imagem) não tem texto para converter.';
+}
+$('cdir').onchange=()=>{cFile=null;cOut=null;$('cinfo').hidden=true;$('cerr').textContent='';$('cgoCard').hidden=true;convNote()};
+convNote();
+$('cdrop').onclick=()=>$('cfile').click();
+$('cdrop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('cfile').click()}};
+['dragover','dragenter'].forEach(ev=>$('cdrop').addEventListener(ev,e=>{e.preventDefault();$('cdrop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('cdrop').addEventListener(ev,e=>{e.preventDefault();$('cdrop').classList.remove('over')}));
+$('cdrop').addEventListener('drop',e=>{if(e.dataTransfer.files[0])setConv(e.dataTransfer.files[0])});
+$('cfile').onchange=e=>{if(e.target.files[0])setConv(e.target.files[0])};
+function setConv(f){
+  const w=$('cdir').value==='w2p';$('cerr').textContent='';
+  if(w&&/\.doc$/i.test(f.name)){$('cerr').textContent='Arquivos .doc (Word antigo) não são aceitos. Abra no Word e salve como .docx.';return}
+  const ok=w?/\.docx$/i.test(f.name):(/\.pdf$/i.test(f.name)||f.type==='application/pdf');
+  if(!ok){$('cerr').textContent=w?'Use um arquivo Word .docx.':'Use um arquivo PDF.';return}
+  cFile=f;cOut=null;
+  $('cinfo').hidden=false;$('cinfo').innerHTML='<span><b></b></span><span>'+fmtMB(f.size)+'</span>';$('cinfo').querySelector('b').textContent=f.name;
+  $('cgoCard').hidden=false;$('cres').hidden=true;$('csave').hidden=true;$('cstatus').textContent='';
+}
+
+async function docxToPdf(file){
+  if(!window.mammoth||!window.PDFLib)throw new Error('As ferramentas de conversão não carregaram. Recarregue a página.');
+  const res=await mammoth.convertToHtml({arrayBuffer:await file.arrayBuffer()});
+  const dom=new DOMParser().parseFromString('<body>'+res.value+'</body>','text/html').body;
+  const pdf=await PDFLib.PDFDocument.create();
+  const SF=PDFLib.StandardFonts;
+  const F={r:await pdf.embedFont(SF.Helvetica),b:await pdf.embedFont(SF.HelveticaBold),i:await pdf.embedFont(SF.HelveticaOblique),bi:await pdf.embedFont(SF.HelveticaBoldOblique)};
+  const W=595.28,H=841.89,M=56;let page=pdf.addPage([W,H]),y=H-M;
+  const fontOf=st=>st.bold&&st.italic?F.bi:st.bold?F.b:st.italic?F.i:F.r;
+  const runsOf=(node,st,out)=>{
+    node.childNodes.forEach(n=>{
+      if(n.nodeType===3){out.push({t:n.textContent,st})}
+      else if(n.nodeType===1){
+        const tg=n.tagName.toLowerCase();
+        if(tg==='br'){out.push({t:' ',st});return}
+        if(tg==='img'||tg==='ul'||tg==='ol'||tg==='table')return;
+        runsOf(n,{bold:st.bold||tg==='strong'||tg==='b',italic:st.italic||tg==='em'||tg==='i'},out);
+      }
+    });return out;
+  };
+  const para=(runs,size,o={})=>{
+    const indent=o.indent||0,gap=o.gap==null?6:o.gap,lh=size*1.35;
+    const words=[];
+    runs.forEach(r=>{clean(r.t).split(/\s+/).filter(Boolean).forEach(w=>words.push({w,f:fontOf(r.st)}))});
+    if(!words.length){y-=gap;return}
+    const x0=M+indent;let x=x0,line=[];
+    const flush=()=>{
+      if(y-lh<M){page=pdf.addPage([W,H]);y=H-M}
+      y-=lh;line.forEach(it=>page.drawText(it.w,{x:it.x,y:y+size*0.25,size,font:it.f}));line=[];x=x0;
+    };
+    let first=true;
+    words.forEach(it=>{
+      const ww=it.f.widthOfTextAtSize(it.w,size),sp=F.r.widthOfTextAtSize(' ',size);
+      if(x>x0&&x+sp+ww>W-M)flush();
+      if(x>x0)x+=sp;
+      if(first&&o.bullet){line.push({w:o.bullet,f:F.r,x:x0-14});first=false}
+      line.push({w:it.w,f:it.f,x});x+=ww;
+    });
+    if(line.length){if(first&&o.bullet)line.push({w:o.bullet,f:F.r,x:x0-14});flush()}
+    y-=gap;
+  };
+  const SIZES={h1:22,h2:18,h3:15,h4:13,h5:12,h6:11};
+  const block=(el,indent)=>{
+    const tg=el.tagName.toLowerCase();
+    if(SIZES[tg]){para(runsOf(el,{bold:true},[]),SIZES[tg],{gap:8,indent});return}
+    if(tg==='ul'||tg==='ol'){let k=1;[...el.children].forEach(li=>{
+      if(li.tagName.toLowerCase()!=='li')return;
+      para(runsOf(li,{},[]),11,{indent:indent+20,bullet:tg==='ul'?'•':(k++)+'.',gap:3});
+      [...li.children].forEach(c=>{if(/^(ul|ol)$/i.test(c.tagName))block(c,indent+20)});
+    });y-=4;return}
+    if(tg==='table'){el.querySelectorAll('tr').forEach(tr=>{
+      const cells=[...tr.children].map(c=>c.textContent.trim());para([{t:cells.join('   |   '),st:{}}],10.5,{indent,gap:2})});y-=6;return}
+    if(tg==='img'||tg==='figure')return;
+    para(runsOf(el,{},[]),11,{indent});
+  };
+  [...dom.children].forEach(el=>block(el,0));
+  if(pdf.getPageCount()===1&&y===H-M)para([{t:'(Documento sem texto)',st:{italic:true}}],11);
+  pdf.setProducer('AFMD');pdf.setCreator('AFMD');
+  return new Blob([await pdf.save()],{type:'application/pdf'});
+}
+
+async function pdfToDocx(file){
+  if(!window.pdfjsLib||!window.JSZip)throw new Error('As ferramentas de conversão não carregaram. Recarregue a página.');
+  const doc=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const esc=t=>t.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let body='',chars=0;
+  for(let i=1;i<=doc.numPages;i++){
+    $('cstatus').textContent='Lendo página '+i+' de '+doc.numPages+'...';
+    const tc=await (await doc.getPage(i)).getTextContent();
+    const lines=[];let cur=null;
+    tc.items.forEach(it=>{
+      if(!it.str&&!it.hasEOL)return;
+      const yy=it.transform[5],h=Math.abs(it.height)||it.transform[3]||11;
+      if(cur&&Math.abs(cur.y-yy)<=Math.max(2,h*.4)){cur.t+=(cur.t&&it.str&&!/\s$/.test(cur.t)&&!/^\s/.test(it.str)?' ':'')+it.str}
+      else{cur={y:yy,h,t:it.str};lines.push(cur)}
+    });
+    let para='',prev=null;const out=[];
+    lines.forEach(l=>{
+      const t=l.t.trim();if(!t)return;
+      if(prev&&((prev.y-l.y)>Math.max(prev.h,l.h)*1.7||Math.abs(prev.h-l.h)>Math.max(prev.h,l.h)*0.2||/^([•·\-–]|\d+[.)])\s/.test(t))){out.push(para);para=''}
+      para+=(para?' ':'')+t;prev=l;
+    });
+    if(para)out.push(para);
+    out.forEach(p=>{chars+=p.length;body+='<w:p><w:r><w:t xml:space="preserve">'+esc(p)+'</w:t></w:r></w:p>'});
+    if(i<doc.numPages)body+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+  }
+  doc.destroy();
+  if(chars<5)throw new Error('Este PDF não tem texto selecionável (parece escaneado). Não há o que converter.');
+  const z=new JSZip();
+  z.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+  z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+  z.file('word/document.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>');
+  return await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+
+$('cgo').onclick=async()=>{
+  if(!cFile||cBusy)return;
+  cBusy=true;$('cgo').disabled=true;cOut=null;$('cres').hidden=true;$('csave').hidden=true;$('cstatus').className='msg';$('cstatus').textContent='Convertendo...';
+  const w=$('cdir').value==='w2p';
+  try{
+    cOut=w?await docxToPdf(cFile):await pdfToDocx(cFile);
+    cName=cFile.name.replace(/\.[^.]+$/,'')+(w?'.pdf':'.docx');
+    $('cBefore').textContent=fmtMB(cFile.size);$('cAfter').textContent=fmtMB(cOut.size);
+    $('cres').hidden=false;$('csave').hidden=false;
+    $('cstatus').textContent='Pronto! Salve o arquivo convertido abaixo e confira o resultado antes de usar.';$('cstatus').className='msg ok';
+  }catch(e){$('cstatus').textContent=(e&&e.message)||'Não foi possível converter o arquivo.';$('cstatus').className='msg err'}
+  cBusy=false;$('cgo').disabled=false;
+};
+$('csave').onclick=async()=>{
+  if(!cOut)return;
+  let d=null;try{d=await claude.use('downloads')}catch(_){}
+  if(!d){$('csmsg').textContent='Salvar direto não está disponível aqui. Abra a página no navegador.';$('csmsg').className='msg err';return}
+  try{await d.save({filename:cName,data:cOut});$('csmsg').textContent=''}
+  catch(e){if(e&&e.code!=='declined'){$('csmsg').textContent='Não foi possível salvar. Tente de novo.';$('csmsg').className='msg err'}}
 };
 </script>
