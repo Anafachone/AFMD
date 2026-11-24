@@ -86,8 +86,8 @@ Qualidade e legitimidade: juntar, dividir, extrair e girar PDF copiam as página
 
 ## Identidade visual AFMD (versão atual)
 
-- **Estrutura:** barra lateral azul-marinho `#20304b` no computador, com o nome TRANSFILES em Libre Baskerville espaçado em dourado `#b49a68`, filete dourado e ícones de linha. No celular a barra vira um topo com abas roláveis.
+- **Estrutura:** barra lateral em degradê lavanda azulada (`#5468bf` a `#4a5eb2`) no computador, com o nome TRANSFILES em Libre Baskerville espaçado em branco, filete dourado claro e ícones de linha. No celular a barra vira um topo com abas roláveis.
 - **Área de trabalho:** fundo creme `#f4f3ef`, cartões brancos com borda fina e sombra suave, filete dourado sob o título da página.
-- **Ferramentas da categoria:** chips em pílula, o ativo em azul-marinho (no celular, azul-lavanda).
+- **Ferramentas da categoria:** chips em pílula, o ativo em azul-lavanda `#4a5fb0`.
 - **Lavanda azulada:** só em destaques (área de soltar arquivo, estatística de economia, cabeçalho no celular).
-- **Botão principal:** azul-marinho no computador, azul-lavanda no celular. Foco em dourado no computador.
+- **Botão principal:** azul-lavanda `#4a5fb0`. Foco em dourado.
