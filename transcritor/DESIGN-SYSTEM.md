@@ -91,3 +91,7 @@ Qualidade e legitimidade: juntar, dividir, extrair e girar PDF copiam as página
 - **Ferramentas da categoria:** chips em pílula, o ativo em azul-lavanda `#4a5fb0`.
 - **Lavanda azulada:** só em destaques (área de soltar arquivo, estatística de economia, cabeçalho no celular).
 - **Botão principal:** azul-lavanda `#4a5fb0`. Foco em dourado.
+
+## PowerPoint para PDF
+
+Na aba "Word, PowerPoint e PDF", a opção PowerPoint (.pptx) para PDF converte cada slide em uma página com texto selecionável, imagens PNG/JPG, formas simples, cores e fundo liso. Não reproduz fontes, tabelas, gráficos, SmartArt, degradês, animações nem efeitos. Para fidelidade total, o caminho é exportar para PDF no próprio PowerPoint.

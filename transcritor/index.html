@@ -266,6 +266,7 @@ video{width:100%;max-height:340px;border-radius:14px;background:#000;border:1px 
         <select id="cdir">
           <option value="w2p" selected>Word (.docx) para PDF</option>
           <option value="p2w">PDF para Word (.docx)</option>
+          <option value="x2p">PowerPoint (.pptx) para PDF</option>
         </select>
       </label>
       <div class="drop" id="cdrop" tabindex="0" role="button" aria-label="Escolher arquivo para converter">
@@ -607,10 +608,11 @@ let cFile=null,cOut=null,cName='',cBusy=false;
 const WIN=/[^\x20-\x7E\xA0-\xFF‘’“”–—…•€™]/g;
 const clean=t=>t.replace(/[\u2028\u2029\u200B]/g,' ').replace(WIN,'?');
 function convNote(){
-  const w=$('cdir').value==='w2p';
-  $('cfile').accept=w?'.docx':'.pdf,application/pdf';
-  $('cdropHint').textContent=w?'docx (Word)':'pdf';
-  $('cnote').innerHTML=w?'Entram texto, títulos, listas, negrito, itálico e tabelas simples (cada linha da tabela vira uma linha de texto). Imagens, cabeçalhos, rodapés e fontes especiais não passam. O PDF fica com texto selecionável.':
+  const d=$('cdir').value;
+  $('cfile').accept=d==='w2p'?'.docx':d==='x2p'?'.pptx':'.pdf,application/pdf';
+  $('cdropHint').textContent=d==='w2p'?'docx (Word)':d==='x2p'?'pptx (PowerPoint)':'pdf';
+  $('cnote').innerHTML=d==='w2p'?'Entram texto, títulos, listas, negrito, itálico e tabelas simples (cada linha da tabela vira uma linha de texto). Imagens, cabeçalhos, rodapés e fontes especiais não passam. O PDF fica com texto selecionável.':
+    d==='x2p'?'Cada slide vira uma página, com texto, imagens, formas, cores e fundo liso. Fontes, tabelas, gráficos, SmartArt, degradês, animações e efeitos não são reproduzidos fielmente, e as fontes viram Helvetica. Para fidelidade total, use Arquivo, Exportar, PDF no próprio PowerPoint. Arquivos .ppt antigos não são aceitos.':
     'Só o texto é extraído, em parágrafos. Imagens, tabelas, colunas e a posição na página não passam. PDF escaneado (só imagem) não tem texto para converter.';
 }
 $('cdir').onchange=()=>{cFile=null;cOut=null;$('cinfo').hidden=true;$('cerr').textContent='';$('cgoCard').hidden=true;convNote()};
@@ -622,10 +624,11 @@ $('cdrop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('
 $('cdrop').addEventListener('drop',e=>{if(e.dataTransfer.files[0])setConv(e.dataTransfer.files[0])});
 $('cfile').onchange=e=>{if(e.target.files[0])setConv(e.target.files[0])};
 function setConv(f){
-  const w=$('cdir').value==='w2p';$('cerr').textContent='';
-  if(w&&/\.doc$/i.test(f.name)){$('cerr').textContent='Arquivos .doc (Word antigo) não são aceitos. Abra no Word e salve como .docx.';return}
-  const ok=w?/\.docx$/i.test(f.name):(/\.pdf$/i.test(f.name)||f.type==='application/pdf');
-  if(!ok){$('cerr').textContent=w?'Use um arquivo Word .docx.':'Use um arquivo PDF.';return}
+  const d=$('cdir').value;$('cerr').textContent='';
+  if(d==='w2p'&&/\.doc$/i.test(f.name)){$('cerr').textContent='Arquivos .doc (Word antigo) não são aceitos. Abra no Word e salve como .docx.';return}
+  if(d==='x2p'&&/\.ppt$/i.test(f.name)){$('cerr').textContent='Arquivos .ppt (PowerPoint antigo) não são aceitos. Abra no PowerPoint e salve como .pptx.';return}
+  const ok=d==='w2p'?/\.docx$/i.test(f.name):d==='x2p'?/\.pptx$/i.test(f.name):(/\.pdf$/i.test(f.name)||f.type==='application/pdf');
+  if(!ok){$('cerr').textContent=d==='w2p'?'Use um arquivo Word .docx.':d==='x2p'?'Use um arquivo PowerPoint .pptx.':'Use um arquivo PDF.';return}
   cFile=f;cOut=null;
   $('cinfo').hidden=false;$('cinfo').innerHTML='<span><b></b></span><span>'+fmtMB(f.size)+'</span>';$('cinfo').querySelector('b').textContent=f.name;
   $('cgoCard').hidden=false;$('cres').hidden=true;$('csave').hidden=true;$('cstatus').textContent='';
@@ -726,16 +729,227 @@ async function pdfToDocx(file){
   return await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
 }
 
+
+/* ---------- PowerPoint (.pptx) para PDF ---------- */
+async function pptxToPdf(file,ui){
+  if(!window.JSZip||!window.PDFLib)throw new Error('As ferramentas de conversão não carregaram. Recarregue a página.');
+  let zip;try{zip=await JSZip.loadAsync(await file.arrayBuffer())}catch(_){throw new Error('Não foi possível abrir este arquivo. Ele precisa ser um .pptx válido.')}
+  const dirOf=p=>p.replace(/[^/]*$/,'');
+  const norm=p=>{const out=[];p.split('/').forEach(x=>{if(x==='..')out.pop();else if(x&&x!=='.')out.push(x)});return out.join('/')};
+  const resolve=(base,t)=>t.startsWith('/')?t.slice(1):norm(dirOf(base)+t);
+  const xmlCache={};
+  const readXml=async p=>{if(p in xmlCache)return xmlCache[p];const f=zip.file(p);if(!f)return xmlCache[p]=null;return xmlCache[p]=new DOMParser().parseFromString(await f.async('string'),'application/xml')};
+  const relsCache={};
+  const relsOf=async p=>{if(relsCache[p])return relsCache[p];const x=await readXml(p.replace(/([^/]+)$/,'_rels/$1.rels'));const m={};if(x)[...x.getElementsByTagName('Relationship')].forEach(r=>{m[r.getAttribute('Id')]={type:r.getAttribute('Type'),target:resolve(p,r.getAttribute('Target'))}});return relsCache[p]=m};
+  const kids=(el,name)=>[...el.children].filter(c=>c.tagName===name);
+  const kid=(el,name)=>el&&[...el.children].find(c=>c.tagName===name);
+  const find=(el,path)=>{let c=el;for(const n of path.split('/')){c=kid(c,n);if(!c)return null}return c};
+  const pres=await readXml('ppt/presentation.xml');if(!pres)throw new Error('Arquivo .pptx inválido.');
+  const sz=pres.getElementsByTagName('p:sldSz')[0];
+  const EMU=12700,W=(+sz.getAttribute('cx'))/EMU,H=(+sz.getAttribute('cy'))/EMU;
+  const presRels=await relsOf('ppt/presentation.xml');
+  const slidePaths=[...pres.getElementsByTagName('p:sldId')].map(e=>presRels[e.getAttribute('r:id')]&&presRels[e.getAttribute('r:id')].target).filter(Boolean);
+  if(!slidePaths.length)throw new Error('Não encontrei slides neste arquivo.');
+  /* tema e cores */
+  const masterPath=Object.values(presRels).find(r=>/\/slideMaster$/.test(r.type)).target;
+  const master=await readXml(masterPath),masterRels=await relsOf(masterPath);
+  const themePath=Object.values(masterRels).find(r=>/\/theme$/.test(r.type));
+  const theme=themePath?await readXml(themePath.target):null;
+  const TH={};
+  if(theme)['dk1','lt1','dk2','lt2','accent1','accent2','accent3','accent4','accent5','accent6','hlink','folHlink'].forEach(n=>{
+    const e=theme.getElementsByTagName('a:'+n)[0];if(!e)return;const c=e.children[0];if(!c)return;
+    TH[n]='#'+(c.getAttribute('val')&&c.tagName==='a:srgbClr'?c.getAttribute('val'):c.getAttribute('lastClr')||'000000')});
+  const cm=master.getElementsByTagName('p:clrMap')[0];
+  const CM={};if(cm)[...cm.attributes].forEach(a=>CM[a.name]=a.value);
+  const schemeHex=v=>{const k=CM[v]||v;return TH[k]||TH[{tx1:'dk1',bg1:'lt1',tx2:'dk2',bg2:'lt2'}[v]]||'#000000'};
+  const hex2rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255);
+  const rgb2hsl=([r,g,b])=>{const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s=0,l=(mx+mn)/2;if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h/=6}return[h,s,l]};
+  const hsl2rgb=([h,s,l])=>{if(s===0)return[l,l,l];const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q,f=t=>{t=(t+1)%1;return t<1/6?p+(q-p)*6*t:t<1/2?q:t<2/3?p+(q-p)*(2/3-t)*6:p};return[f(h+1/3),f(h),f(h-1/3)]};
+  const colorOf=fillEl=>{ /* fillEl: elemento solidFill ou o pai que contém a cor */
+    if(!fillEl)return null;const c=[...fillEl.children].find(x=>/^a:(srgbClr|schemeClr|sysClr|prstClr)$/.test(x.tagName));if(!c)return null;
+    let hex=c.tagName==='a:srgbClr'?'#'+c.getAttribute('val'):c.tagName==='a:schemeClr'?schemeHex(c.getAttribute('val')):c.tagName==='a:sysClr'?'#'+(c.getAttribute('lastClr')||'000000'):'#000000';
+    let rgb=hex2rgb(hex);
+    [...c.children].forEach(m=>{const v=(+m.getAttribute('val'))/100000;
+      if(m.tagName==='a:lumMod'||m.tagName==='a:lumOff'||m.tagName==='a:tint'||m.tagName==='a:shade'){const hl=rgb2hsl(rgb);
+        if(m.tagName==='a:lumMod')hl[2]=Math.min(1,hl[2]*v);if(m.tagName==='a:lumOff')hl[2]=Math.min(1,hl[2]+v);
+        if(m.tagName==='a:tint')hl[2]=Math.min(1,hl[2]+(1-hl[2])*(1-v));if(m.tagName==='a:shade')hl[2]=hl[2]*v;rgb=hsl2rgb(hl)}});
+    return rgb;
+  };
+  const solid=el=>{const sf=kid(el,'a:solidFill');if(sf)return colorOf(sf);const gf=kid(el,'a:gradFill');if(gf){const gs=gf.getElementsByTagName('a:gs')[0];return gs?colorOf(gs):null}return null};
+  const pdf=await PDFLib.PDFDocument.create();const SF=PDFLib.StandardFonts;
+  const F={r:await pdf.embedFont(SF.Helvetica),b:await pdf.embedFont(SF.HelveticaBold),i:await pdf.embedFont(SF.HelveticaOblique),bi:await pdf.embedFont(SF.HelveticaBoldOblique)};
+  const fontOf=(b,i)=>b&&i?F.bi:b?F.b:i?F.i:F.r;
+  const imgCache={};
+  const embedImage=async path=>{
+    if(path in imgCache)return imgCache[path];const f=zip.file(path);if(!f)return imgCache[path]=null;
+    const bytes=await f.async('uint8array');let img=null;
+    try{
+      if(/\.png$/i.test(path))img=await pdf.embedPng(bytes);
+      else if(/\.jpe?g$/i.test(path))img=await pdf.embedJpg(bytes);
+      else{const bmp=await createImageBitmap(new Blob([bytes]));const cv=document.createElement('canvas');cv.width=bmp.width;cv.height=bmp.height;cv.getContext('2d').drawImage(bmp,0,0);
+        img=await pdf.embedPng(new Uint8Array(await (await new Promise(r=>cv.toBlob(r,'image/png'))).arrayBuffer()))}
+    }catch(_){img=null}
+    return imgCache[path]=img;
+  };
+  const skipped={tables:0,charts:0,other:0};
+  const phKey=sp=>{const ph=sp.getElementsByTagName('p:ph')[0];return ph?{type:ph.getAttribute('type')||'body',idx:ph.getAttribute('idx')}:null};
+  const findPh=(tree,key)=>{if(!tree||!key)return null;const all=[...tree.getElementsByTagName('p:sp')];
+    return all.find(sp=>{const k=phKey(sp);return k&&((key.idx&&k.idx===key.idx)||(k.type===key.type)||(key.type==='ctrTitle'&&k.type==='title')||(key.type==='subTitle'&&k.type==='body'))})||null};
+  const xfrmOf=sp=>{const x=sp.getElementsByTagName('a:xfrm')[0];if(!x||x.parentElement.tagName==='p:grpSpPr'&&false)return null;const o=kid(x,'a:off'),e=kid(x,'a:ext');return o&&e?{x:+o.getAttribute('x'),y:+o.getAttribute('y'),w:+e.getAttribute('cx'),h:+e.getAttribute('cy')}:null};
+  const ownXfrm=sp=>{const spPr=kid(sp,'p:spPr');const x=spPr&&kid(spPr,'a:xfrm');if(!x)return null;const o=kid(x,'a:off'),e=kid(x,'a:ext');return o&&e?{x:+o.getAttribute('x'),y:+o.getAttribute('y'),w:+e.getAttribute('cx'),h:+e.getAttribute('cy')}:null};
+  const lvlProp=(lst,lvl,attr,inRpr)=>{if(!lst)return null;const l=kid(lst,'a:lvl'+(lvl+1)+'pPr');if(!l)return null;const t=inRpr?kid(l,'a:defRPr'):l;return t&&t.getAttribute(attr)};
+  const lvlColor=(lst,lvl)=>{if(!lst)return null;const l=kid(lst,'a:lvl'+(lvl+1)+'pPr'),d=l&&kid(l,'a:defRPr');return d?solid(d):null};
+  const styleOf=(kind)=>{const ts=master.getElementsByTagName('p:txStyles')[0];if(!ts)return null;return kid(ts,kind==='title'?'p:titleStyle':kind==='body'?'p:bodyStyle':'p:otherStyle')};
+  const baseSizes={title:40,ctrTitle:44,subTitle:24,body:24,other:18};
+
+  const bgOf=async(tree)=>{const bg=tree.getElementsByTagName('p:bg')[0];if(!bg)return null;
+    const bp=kid(bg,'p:bgPr');if(bp){const c=solid(bp);if(c)return {color:c};return null}
+    const br=kid(bg,'p:bgRef');if(br){const c=colorOf(br);if(c)return {color:c}}return null};
+
+  for(let si=0;si<slidePaths.length;si++){
+    ui.prog(si/slidePaths.length,'Convertendo slide '+(si+1)+' de '+slidePaths.length+'...');
+    const spath=slidePaths[si],slide=await readXml(spath),srels=await relsOf(spath);
+    const lay=Object.values(srels).find(r=>/\/slideLayout$/.test(r.type));const layout=lay?await readXml(lay.target):null;
+    const page=pdf.addPage([W,H]);
+    const bg=(await bgOf(slide))||(layout&&await bgOf(layout))||(await bgOf(master))||{color:[1,1,1]};
+    page.drawRectangle({x:0,y:0,width:W,height:H,color:PDFLib.rgb(...bg.color)});
+    const tree=slide.getElementsByTagName('p:spTree')[0];
+    const drawTree=async(parent,tf)=>{
+      for(const el of [...parent.children]){
+        const tg=el.tagName;
+        if(tg==='p:grpSp'){
+          const x=el.getElementsByTagName('a:xfrm')[0],o=kid(x,'a:off'),e=kid(x,'a:ext'),co=kid(x,'a:chOff'),ce=kid(x,'a:chExt');
+          if(!o||!e||!co||!ce)continue;
+          const kx=(+e.getAttribute('cx'))/(+ce.getAttribute('cx')||1),ky=(+e.getAttribute('cy'))/(+ce.getAttribute('cy')||1);
+          await drawTree(el,{ax:tf.ax*kx,bx:tf.bx+tf.ax*(+o.getAttribute('x')-(+co.getAttribute('x'))*kx),ay:tf.ay*ky,by:tf.by+tf.ay*(+o.getAttribute('y')-(+co.getAttribute('y'))*ky)});
+        }else if(tg==='p:sp'||tg==='p:pic'||tg==='p:cxnSp'){
+          await drawShape(el,tf);
+        }else if(tg==='p:graphicFrame'){
+          if(el.getElementsByTagName('a:tbl')[0])skipped.tables++;else if(el.getElementsByTagName('c:chart')[0])skipped.charts++;else skipped.other++;
+        }
+      }
+    };
+    const drawShape=async(el,tf)=>{
+      const key=el.tagName==='p:sp'?phKey(el):null;
+      const layPh=key&&layout?findPh(layout,key):null,masPh=key?findPh(master,key):null;
+      let xf=ownXfrm(el)||(layPh&&ownXfrm(layPh))||(masPh&&ownXfrm(masPh));
+      if(!xf)return;
+      const X=(tf.bx+tf.ax*xf.x)/EMU,Wd=tf.ax*xf.w/EMU,Hh=tf.ay*xf.h/EMU,Y=(tf.by+tf.ay*xf.y)/EMU;
+      const px=X,py=H-Y-Hh;
+      const spPr=kid(el,'p:spPr');
+      if(el.tagName==='p:pic'){
+        const blip=el.getElementsByTagName('a:blip')[0],rid=blip&&blip.getAttribute('r:embed');
+        if(rid&&srels[rid]){const img=await embedImage(srels[rid].target);if(img)page.drawImage(img,{x:px,y:py,width:Wd,height:Hh})}
+        return;
+      }
+      const geom=spPr&&kid(spPr,'a:prstGeom'),prst=geom&&geom.getAttribute('prst');
+      const fill=spPr&&solid(spPr);
+      const ln=spPr&&kid(spPr,'a:ln'),lnc=ln&&solid(ln),lnw=ln&&ln.getAttribute('w')?(+ln.getAttribute('w'))/EMU:0.75;
+      if(el.tagName==='p:cxnSp'){
+        if(lnc)page.drawLine({start:{x:px,y:py+Hh},end:{x:px+Wd,y:py},thickness:lnw,color:PDFLib.rgb(...lnc)});return;
+      }
+      const hasNoFill=spPr&&kid(spPr,'a:noFill');
+      if((fill&&!hasNoFill)||(lnc&&!(ln&&kid(ln,'a:noFill')))){
+        const opts={color:fill&&!hasNoFill?PDFLib.rgb(...fill):undefined,borderColor:lnc&&!(ln&&kid(ln,'a:noFill'))?PDFLib.rgb(...lnc):undefined,borderWidth:lnc&&!(ln&&kid(ln,'a:noFill'))?lnw:0};
+        if(prst==='ellipse')page.drawEllipse({x:px+Wd/2,y:py+Hh/2,xScale:Wd/2,yScale:Hh/2,...opts});
+        else page.drawRectangle({x:px,y:py,width:Wd,height:Hh,...opts});
+      }
+      const tb=kid(el,'p:txBody');if(!tb)return;
+      /* texto */
+      const bodyPr=kid(tb,'a:bodyPr'),lstOwn=kid(tb,'a:lstStyle');
+      const layTb=layPh&&kid(layPh,'p:txBody'),masTb=masPh&&kid(masPh,'p:txBody');
+      const lstLay=layTb&&kid(layTb,'a:lstStyle'),lstMas=masTb&&kid(masTb,'a:lstStyle');
+      const kind=key?(/title/i.test(key.type)?'title':/^(body|subTitle|obj)$/.test(key.type)?'body':'other'):'other';
+      const lstSty=styleOf(kind);
+      const chain=[lstOwn,lstLay,lstMas,lstSty];
+      const get=(lvl,attr,rpr)=>{for(const l of chain){const v=lvlProp(l,lvl,attr,rpr);if(v!=null&&v!=='')return v}return null};
+      const getColor=lvl=>{for(const l of chain){const c=lvlColor(l,lvl);if(c)return c}return null};
+      const bpGet=a=>(bodyPr&&bodyPr.getAttribute(a))||(layTb&&kid(layTb,'a:bodyPr')&&kid(layTb,'a:bodyPr').getAttribute(a))||(masTb&&kid(masTb,'a:bodyPr')&&kid(masTb,'a:bodyPr').getAttribute(a))||null;
+      const lI=((+bpGet('lIns'))||(bpGet('lIns')==='0'?0:91440))/EMU,rI=((+bpGet('rIns'))||(bpGet('rIns')==='0'?0:91440))/EMU,tI=((+bpGet('tIns'))||(bpGet('tIns')==='0'?0:45720))/EMU,bI=((+bpGet('bIns'))||(bpGet('bIns')==='0'?0:45720))/EMU;
+      const anchor=bpGet('anchor')||'t';
+      const naf=bodyPr&&kid(bodyPr,'a:normAutofit');const fsAttr=naf&&naf.getAttribute('fontScale');const baseScale=fsAttr?(+fsAttr)/100000:1;
+      const paras=kids(tb,'a:p').map(p=>{
+        const pPr=kid(p,'a:pPr'),lvl=pPr&&pPr.getAttribute('lvl')?+pPr.getAttribute('lvl'):0;
+        const algn=(pPr&&pPr.getAttribute('algn'))||get(lvl,'algn',false)||'l';
+        const hasBu=pPr&&kid(pPr,'a:buChar');const noBu=pPr&&kid(pPr,'a:buNone');
+        const styleBu=chain.some(l=>{const lv=l&&kid(l,'a:lvl'+(lvl+1)+'pPr');return lv&&kid(lv,'a:buChar')});
+        const bullet=!noBu&&(hasBu||(!pPr||!kid(pPr,'a:buNone'))&&styleBu&&kind==='body')?'•':null;
+        const marL=(pPr&&pPr.getAttribute('marL')!=null?+pPr.getAttribute('marL'):+(get(lvl,'marL',false)||0))/EMU;
+        const indent=(pPr&&pPr.getAttribute('indent')!=null?+pPr.getAttribute('indent'):+(get(lvl,'indent',false)||0))/EMU;
+        const runs=[];
+        [...p.children].forEach(r=>{
+          if(r.tagName==='a:r'||r.tagName==='a:fld'){const t=kid(r,'a:t');if(!t)return;const rp=kid(r,'a:rPr');
+            const sz=(rp&&rp.getAttribute('sz'))||get(lvl,'sz',true);
+            const b=rp&&rp.getAttribute('b')!=null?rp.getAttribute('b')==='1':get(lvl,'b',true)==='1';
+            const i=rp&&rp.getAttribute('i')!=null?rp.getAttribute('i')==='1':get(lvl,'i',true)==='1';
+            const col=(rp&&solid(rp))||getColor(lvl)||colorOf({children:[{tagName:'a:schemeClr',getAttribute:()=> 'tx1',children:[]}]});
+            runs.push({t:t.textContent,size:sz?(+sz)/100:null,b,i,col})}
+          else if(r.tagName==='a:br')runs.push({t:'\n',br:true});
+        });
+        const eRp=kid(p,'a:endParaRPr');
+        return {lvl,algn,bullet,marL:marL||(bullet?(lvl+1)*18:lvl*18),indent:indent||(bullet?-18:0),runs,endSize:eRp&&eRp.getAttribute('sz')?(+eRp.getAttribute('sz'))/100:null};
+      });
+      const defSize=kind==='title'?(key&&key.type==='ctrTitle'?44:40):kind==='body'?24:18;
+      const Wtext=Math.max(10,Wd-lI-rI),Hbox=Math.max(10,Hh-tI-bI);
+      const layoutAt=scale=>{
+        let total=0;const out=[];
+        paras.forEach(p=>{
+          const words=[];let maxSize=0;
+          p.runs.forEach(r=>{const size=(r.size||defSize)*scale;maxSize=Math.max(maxSize,size);
+            if(r.br){words.push({br:true});return}
+            clean(r.t).split(/(\s+)/).filter(x=>x!=='').forEach(w=>words.push({w,f:fontOf(r.b,r.i),size,col:r.col||[0,0,0],sp:/^\s+$/.test(w)}))});
+          if(!maxSize)maxSize=(p.endSize||defSize)*scale;
+          const lh=maxSize*1.2;const lines=[];let cur=[],cw=0;const avail=Wtext-p.marL;
+          const pushLine=()=>{lines.push({items:cur,w:cw,lh});cur=[];cw=0};
+          words.forEach(w=>{
+            if(w.br){pushLine();return}
+            const ww=w.f.widthOfTextAtSize(w.w,w.size);
+            if(!w.sp&&cw+ww>avail+p.indent*-0&&cur.length){pushLine()}
+            if(w.sp&&!cur.length)return;
+            cur.push({...w,ww});cw+=ww;
+          });
+          pushLine();
+          out.push({p,lines,maxSize});total+=lines.length*lh+maxSize*0.2;
+        });
+        return {out,total};
+      };
+      let scale=baseScale,res=layoutAt(scale);
+      while(res.total>Hbox&&scale>0.5){scale-=0.05;res=layoutAt(scale)}
+      let y=anchor==='ctr'?(Hbox-res.total)/2:anchor==='b'?(Hbox-res.total):0;
+      y=Math.max(0,y);
+      res.out.forEach(po=>{
+        po.lines.forEach((ln,li)=>{
+          y+=ln.lh;
+          const baseY=py+Hh-tI-y+ln.lh*0.22;
+          let startX=px+lI+po.p.marL+(li===0&&!po.p.bullet?po.p.indent:0);
+          const avail=Wtext-po.p.marL;
+          let off=0;if(po.p.algn==='ctr')off=(avail-ln.w)/2;else if(po.p.algn==='r')off=avail-ln.w;
+          if(li===0&&po.p.bullet){const c=ln.items[0]?ln.items[0].col:[0,0,0];page.drawText('•',{x:px+lI+po.p.marL+po.p.indent,y:baseY,size:po.maxSize*0.9,font:F.r,color:PDFLib.rgb(...c)})}
+          let x=startX+Math.max(0,off);
+          ln.items.forEach(it=>{if(!it.sp)page.drawText(it.w,{x,y:baseY,size:it.size,font:it.f,color:PDFLib.rgb(...it.col)});x+=it.ww});
+        });
+        y+=po.maxSize*0.2;
+      });
+    };
+    await drawTree(tree,{ax:1,bx:0,ay:1,by:0});
+  }
+  pdf.setProducer('TRANSFILES');pdf.setCreator('TRANSFILES');
+  const notes=[];
+  if(skipped.tables)notes.push(skipped.tables+' tabela(s)');if(skipped.charts)notes.push(skipped.charts+' gráfico(s)');if(skipped.other)notes.push(skipped.other+' objeto(s) como SmartArt');
+  return {blob:new Blob([await pdf.save()],{type:'application/pdf'}),notes};
+}
+
 $('cgo').onclick=async()=>{
   if(!cFile||cBusy)return;
   cBusy=true;$('cgo').disabled=true;cOut=null;$('cres').hidden=true;$('csave').hidden=true;$('cstatus').className='msg';$('cstatus').textContent='Convertendo...';
-  const w=$('cdir').value==='w2p';
+  const d=$('cdir').value;let extra='';
   try{
-    cOut=w?await docxToPdf(cFile):await pdfToDocx(cFile);
-    cName=cFile.name.replace(/\.[^.]+$/,'')+(w?'.pdf':'.docx');
+    if(d==='x2p'){const r=await pptxToPdf(cFile,{prog:(f,t)=>{$('cstatus').textContent=t}});cOut=r.blob;if(r.notes.length)extra=' Não foram convertidos: '+r.notes.join(', ')+'.'}
+    else cOut=d==='w2p'?await docxToPdf(cFile):await pdfToDocx(cFile);
+    cName=cFile.name.replace(/\.[^.]+$/,'')+(d==='p2w'?'.docx':'.pdf');
     $('cBefore').textContent=fmtMB(cFile.size);$('cAfter').textContent=fmtMB(cOut.size);
     $('cres').hidden=false;$('csave').hidden=false;
-    $('cstatus').textContent='Pronto! Salve o arquivo convertido abaixo e confira o resultado antes de usar.';$('cstatus').className='msg ok';
+    $('cstatus').textContent='Pronto! Salve o arquivo convertido abaixo e confira o resultado antes de usar.'+extra;$('cstatus').className='msg ok';
   }catch(e){$('cstatus').textContent=(e&&e.message)||'Não foi possível converter o arquivo.';$('cstatus').className='msg err'}
   cBusy=false;$('cgo').disabled=false;
 };
@@ -753,7 +967,7 @@ const TOOLS_BY_CAT={
   aud:[['aud_conv','Extrair, cortar ou converter áudio']],
   img:[['img_conv','Converter, comprimir e redimensionar']],
   pdf:[['pdf_compress','Comprimir PDF'],['pdf_merge','Juntar PDFs'],['pdf_split','Dividir PDF'],['pdf_extract','Extrair páginas'],['pdf_rotate','Girar páginas']],
-  doc:[['doc_conv','Word ⇄ PDF']]
+  doc:[['doc_conv','Word, PowerPoint e PDF']]
 };
 const HERO={
   vid_compress:'Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.',
@@ -765,7 +979,7 @@ const HERO={
   pdf_split:'Divida um PDF em vários arquivos. As páginas são copiadas sem recompressão.',
   pdf_extract:'Extraia só as páginas que você quer em um novo PDF, sem perder qualidade.',
   pdf_rotate:'Gire todas ou algumas páginas do PDF sem recomprimir nada.',
-  doc_conv:'Converta Word em PDF e PDF em Word, direto no navegador. O arquivo não sai do seu computador.'
+  doc_conv:'Converta Word e PowerPoint em PDF e PDF em Word, direto no navegador. O arquivo não sai do seu computador.'
 };
 let cat='vid',curTool='vid_compress';
 function setCat(c){
