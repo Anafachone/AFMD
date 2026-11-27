@@ -1,0 +1,1204 @@
+<title>TRANSFILES</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js"></script>
+<style>
+/* Layout: barra lateral azul-marinho com ouro (identidade AFMD) e área de trabalho em creme; lavanda azulada só para destaques. Libre Baskerville nos títulos, Montserrat no texto. */
+:root{
+  --bg:#f4f3ef; --card:#ffffff; --navy:#20304b; --navy-2:#2d3f5f; --side:#5468bf; --side-2:#4a5eb2; --accent:#4a5fb0; --accent-2:#3f539f; --gold:#b49a68; --gold-ink:#7d6633;
+  --lav-100:#e8ecfa; --lav-200:#d6def6; --lav-300:#bcc8ee; --lav-600:#5a70c2; --primary:#5a70c2;
+  --ink:#16263e; --on-ink:#f4f3ef; --muted:#5b6585; --line:#e3dfd4; --field:#cdd5ec; --soft:#e3e7f6;
+  --ok:#2d7a57; --err:#a8383f;
+  --shadow-card:0 1px 2px rgba(22,38,62,.05),0 8px 24px -14px rgba(22,38,62,.18);
+  --font-serif:'Libre Baskerville',Georgia,serif; --font-sans:'Montserrat',system-ui,sans-serif;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--font-sans)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+h1,h2{font-family:var(--font-serif);font-weight:400;margin:0;letter-spacing:-.01em}
+h2{font-size:20px;line-height:1.25}
+.lab{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-ink)}
+.msg{font-size:13px;color:var(--muted)} .msg.ok{color:var(--ok)} .msg.err{color:var(--err)}
+
+/* estrutura */
+.app{display:grid;grid-template-columns:268px minmax(0,1fr);min-height:100dvh}
+.side{background:linear-gradient(180deg,var(--side),var(--side-2));color:#f1f4fd;position:sticky;top:0;align-self:start;height:100dvh;padding:36px 18px 22px;padding-left:max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:30px}
+.brand{padding:4px 10px 0}
+.brand b{display:block;font:400 21px var(--font-serif);letter-spacing:.26em;color:#fff}
+.brand i{display:block;width:38px;height:1px;background:#e6d3a5;margin:12px 0 10px}
+.brand span{display:block;font-size:11.5px;line-height:1.5;color:#e1e7fa;max-width:200px}
+.nav{display:grid;gap:4px}
+.nav button{display:flex;justify-content:flex-start;align-items:center;gap:12px;width:100%;text-align:left;border:0;border-left:3px solid transparent;border-radius:0 10px 10px 0;background:transparent;color:#eef1fb;padding:12px 14px;min-height:46px;font-size:14px;font-weight:500}
+.nav button svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+.nav button:hover{background:rgba(255,255,255,.1)}
+.nav button[aria-pressed="true"]{background:rgba(255,255,255,.2);border-left-color:#e6d3a5;color:#fff}
+.nav button[aria-pressed="true"] svg{color:#fff;opacity:1}
+.side-foot{margin-top:auto;padding:16px 10px 0;border-top:1px solid rgba(255,255,255,.22);font-size:11.5px;line-height:1.5;color:#dfe5f8}
+main{min-width:0;padding:44px 44px 90px;padding-right:max(44px,env(safe-area-inset-right,0px));max-width:1040px;width:100%;display:grid;gap:24px;align-content:start}
+
+/* cabeçalho da página */
+.page{display:flex;justify-content:space-between;align-items:flex-end;gap:16px 28px;flex-wrap:wrap;padding-bottom:22px;border-bottom:1px solid var(--line);position:relative}
+.page::after{content:"";position:absolute;left:0;bottom:-1px;width:64px;height:2px;background:var(--gold)}
+.page .hd{display:grid;gap:8px;min-width:0;max-width:60ch}
+.page h1{font-size:clamp(28px,3.4vw,40px);line-height:1.12}
+.page p{margin:0;color:var(--muted);font-size:15px}
+.badge{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:104px;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 16px;box-shadow:var(--shadow-card)}
+.badge b{display:block;font:400 28px/1 var(--font-serif);font-variant-numeric:tabular-nums}
+.badge span{display:block;white-space:nowrap;font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+
+/* ferramentas da categoria */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--field);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 16px;min-height:40px;font-size:13.5px;font-weight:600;cursor:pointer}
+.chip:hover{background:var(--lav-100)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.panel{display:grid;gap:18px;align-content:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;display:grid;gap:16px;align-content:start;min-width:0;box-shadow:var(--shadow-card)}
+.cardhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+
+.drop{border:1.5px dashed var(--lav-300);background:linear-gradient(180deg,#f2f4fc,#e8ecfa);border-radius:14px;padding:34px 18px;text-align:center;cursor:pointer;display:grid;gap:4px;transition:border-color .15s,background .15s}
+.drop:hover{border-color:var(--lav-600)}
+.drop.over{border-color:var(--lav-600);background:var(--lav-200)}
+.drop strong{font:400 17px var(--font-serif)}
+.drop span{color:var(--muted);font-size:13px}
+.file{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px;color:var(--muted)}
+.file b{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+.flist{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.flist li{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--lav-100);border:1px solid var(--soft);border-radius:10px;padding:6px 10px;font-size:13px;min-width:0}
+.flist li span{overflow-wrap:anywhere}
+.flist button{min-height:30px;padding:2px 12px;font-size:12px}
+
+label.sel{display:grid;gap:6px;font-size:12px;font-weight:600;letter-spacing:.04em}
+select,input[type=number],input[type=text],button{font:inherit;color:inherit}
+select,input[type=number],input[type=text]{padding:9px 12px;min-height:44px;border:1px solid var(--field);border-radius:10px;background:var(--card);width:100%;max-width:240px}
+select:focus,input[type=number]:focus,input[type=text]:focus{border-color:var(--lav-600);outline:0;box-shadow:0 0 0 3px rgba(90,112,194,.18)}
+.row{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end}
+
+button{border:1px solid var(--field);background:var(--card);border-radius:10px;font-weight:600;font-size:14px;padding:8px 20px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background .15s,border-color .15s}
+button:hover{background:var(--lav-100)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:var(--accent-2)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.presets button{min-height:38px;padding:6px 14px;font-size:13px}
+.presets button[aria-pressed="true"]{background:var(--lav-100);border-color:var(--lav-600)}
+
+.plan{background:var(--lav-100);border:1px solid var(--soft);border-radius:12px;padding:12px 14px;font-size:13.5px;display:grid;gap:2px}
+.plan b{font-variant-numeric:tabular-nums}
+progress{width:100%;height:8px;accent-color:var(--lav-600)}
+.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:2px}
+.stat.hi{background:linear-gradient(135deg,#d3def9,#e6e4fa);border-color:var(--lav-300)}
+.stat span{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.stat.hi span{color:var(--navy)}
+.stat b{font:400 24px var(--font-serif);font-variant-numeric:tabular-nums}
+video{width:100%;max-height:340px;border-radius:14px;background:#000;border:1px solid var(--line)}
+
+/* tablet e celular */
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{min-width:0}
+  .side{position:static;height:auto;padding:18px 16px 12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));gap:14px}
+  .brand{padding:0}
+  .brand i{margin:8px 0 6px}
+  .brand span{max-width:none}
+  .nav{display:flex;max-width:100%;overflow-x:auto;gap:6px;padding-bottom:6px;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .nav button{width:auto;flex:none;white-space:nowrap;border-left:0;border-radius:999px;padding:8px 14px;min-height:42px;font-size:13px;border:1px solid rgba(255,255,255,.35)}
+  .nav button[aria-pressed="true"]{background:#fff;border-color:#fff;color:var(--accent)}
+  .nav button[aria-pressed="true"] svg{color:var(--accent)}
+  .side-foot{display:none}
+  main{padding:22px 16px 70px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+}
+/* versão móbile: visual macio e arredondado */
+@media (max-width:720px){
+  .page{background:linear-gradient(135deg,#d3def9,#e6e4fa);border:1px solid var(--lav-300);border-radius:28px;padding:22px 24px;box-shadow:var(--shadow-card)}
+  .page::after{display:none}
+  .badge{border-radius:20px;padding:8px 14px}
+  .card{border-radius:26px;padding:22px}
+  .drop{border:2px dashed var(--lav-300);border-radius:22px;padding:34px 18px}
+  select,input[type=number],input[type=text]{border:1.5px solid var(--lav-300);border-radius:16px}
+  button{border:1.5px solid var(--lav-300);border-radius:999px;padding:8px 22px;min-height:46px}
+  button.primary{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 8px 18px -8px rgba(90,112,194,.6)}
+  button.primary:hover{background:#4a60b0}
+  .nav button{border:1px solid rgba(255,255,255,.35);min-height:42px;padding:8px 14px;box-shadow:none}
+  .chip{border:1.5px solid var(--lav-300)}
+  .chip[aria-pressed="true"]{background:var(--primary);border-color:var(--primary)}
+  .plan{border-radius:18px}
+  .stat{border-radius:20px}
+  .stat.hi{border-color:var(--lav-300)}
+  video{border-radius:20px}
+  .flist li{border-radius:14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+<aside class="side">
+  <div class="brand"><b>TRANSFILES</b><i></i><span>Comprima, divida e converta arquivos sem estragar a qualidade.</span></div>
+  <nav class="nav" aria-label="Tipos de arquivo"><button id="tab_vid" aria-pressed="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg><span>Vídeo</span></button><button id="tab_aud" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg><span>Áudio</span></button><button id="tab_img" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg><span>Imagens</span></button><button id="tab_pdf" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg><span>PDF</span></button><button id="tab_doc" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg><span>Word ⇄ PDF</span></button></nav>
+  <div class="side-foot">Tudo acontece no seu navegador. Seus arquivos não são enviados para lugar nenhum.</div>
+</aside>
+<main>
+  <header class="page">
+    <div class="hd">
+      <span class="lab" id="heroCat">Vídeo</span>
+      <h1 id="heroH">Comprimir vídeo</h1>
+      <p id="heroP">Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.</p>
+    </div>
+    <div class="badge" aria-live="polite"><b id="badgeN">180</b><span>MB no máximo</span></div>
+  </header>
+
+  <div class="chips" id="chips" role="group" aria-label="Ferramentas"></div>
+  <select id="toolSel" hidden></select>
+
+  <div id="vidPanel" class="panel">
+  <section class="card" aria-labelledby="s1">
+    <div class="cardhead"><span class="lab">Passo 1</span><h2 id="s1">Escolher o vídeo</h2></div>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Escolher vídeo mp4 ou mov">
+      <strong>Solte o vídeo aqui ou clique para escolher</strong>
+      <span>mp4 ou mov, da galeria ou dos arquivos</span>
+    </div>
+    <input id="file" type="file" accept="video/*,.mp4,.mov" hidden>
+    <div class="file" id="info" hidden></div>
+    <div class="msg err" id="err1" role="alert"></div>
+  </section>
+
+  <section class="card" aria-labelledby="s2" id="adj" hidden>
+    <div class="cardhead"><span class="lab">Passo 2</span><h2 id="s2">Ajustar e comprimir</h2></div>
+    <div class="row">
+      <label class="sel" for="target">Tamanho máximo (MB)
+        <input id="target" type="number" min="5" max="1000" step="1" value="180">
+      </label>
+      <label class="sel" for="res">Resolução
+        <select id="res">
+          <option value="auto" selected>Automática</option>
+          <option value="1080">Até 1080p</option>
+          <option value="720">Até 720p</option>
+          <option value="480">Até 480p</option>
+        </select>
+      </label>
+    </div>
+    <div class="row presets" role="group" aria-label="Tamanhos rápidos">
+      <button type="button" data-mb="16">16 MB (WhatsApp)</button>
+      <button type="button" data-mb="50">50 MB</button>
+      <button type="button" data-mb="180">180 MB</button>
+    </div>
+    <div class="plan" id="plan" aria-live="polite"></div>
+    <div class="row"><button class="primary" id="go">Comprimir vídeo</button></div>
+    <p class="msg">A compressão acontece em tempo real: leva a duração do vídeo. Mantenha esta aba aberta e visível até terminar.</p>
+    <progress id="bar" max="1" value="0" hidden></progress>
+    <div class="msg" id="status" role="status"></div>
+  </section>
+
+  <section class="card" aria-labelledby="s3" id="res3" hidden>
+    <div class="cardhead"><span class="lab">Passo 3</span><h2 id="s3">Resultado</h2></div>
+    <div class="result">
+      <div class="stat"><span>Original</span><b id="mbBefore">-</b></div>
+      <div class="stat"><span>Comprimido</span><b id="mbAfter">-</b></div>
+      <div class="stat hi"><span>Economia</span><b id="mbSaved">-</b></div>
+    </div>
+    <div class="msg" id="verdict"></div>
+    <video id="preview" controls playsinline></video>
+    <div class="row"><button class="primary" id="save">Salvar vídeo comprimido</button><span class="msg" id="smsg" role="status"></span></div>
+  </section>
+  </div>
+
+  <div id="pdfPanel" class="panel" hidden>
+    <section class="card" aria-labelledby="p1">
+      <div class="cardhead"><span class="lab">Passo 1</span><h2 id="p1">Escolher o PDF</h2></div>
+      <div class="drop" id="pdrop" tabindex="0" role="button" aria-label="Escolher arquivo PDF">
+        <strong>Solte o PDF aqui ou clique para escolher</strong>
+        <span>pdf</span>
+      </div>
+      <input id="pfile" type="file" accept="application/pdf,.pdf" hidden>
+      <div class="file" id="pinfo" hidden></div>
+      <div class="msg err" id="perr" role="alert"></div>
+    </section>
+
+    <section class="card" aria-labelledby="p2" id="padj" hidden>
+      <div class="cardhead"><span class="lab">Passo 2</span><h2 id="p2">Ajustar e comprimir</h2></div>
+      <div class="row">
+        <label class="sel" for="ptarget">Tamanho máximo (MB)
+          <input id="ptarget" type="number" min="1" max="2000" step="1" value="300">
+        </label>
+        <label class="sel" for="pmethod">Método
+          <select id="pmethod">
+            <option value="raster" selected>Reduzir imagens (o texto vira imagem)</option>
+            <option value="light">Manter texto (compressão leve)</option>
+          </select>
+        </label>
+        <label class="sel" for="pq" id="pqwrap">Qualidade
+          <select id="pq">
+            <option value="bal" selected>Equilibrada</option>
+            <option value="strong">Forte (menor)</option>
+            <option value="min">Mínima (bem menor)</option>
+          </select>
+        </label>
+      </div>
+      <div class="plan" id="pplan" aria-live="polite"></div>
+      <div class="row"><button class="primary" id="pgo">Comprimir PDF</button></div>
+      <progress id="pbar" max="1" value="0" hidden></progress>
+      <div class="msg" id="pstatus" role="status"></div>
+    </section>
+
+    <section class="card" aria-labelledby="p3" id="pres" hidden>
+      <div class="cardhead"><span class="lab">Passo 3</span><h2 id="p3">Resultado</h2></div>
+      <div class="result">
+        <div class="stat"><span>Original</span><b id="pBefore">-</b></div>
+        <div class="stat"><span>Comprimido</span><b id="pAfter">-</b></div>
+        <div class="stat hi"><span>Economia</span><b id="pSaved">-</b></div>
+      </div>
+      <div class="msg" id="pverdict"></div>
+      <div class="row"><button class="primary" id="psave">Salvar PDF comprimido</button><span class="msg" id="psmsg" role="status"></span></div>
+    </section>
+  </div>
+
+  <div id="convPanel" class="panel" hidden>
+    <section class="card" aria-labelledby="c1">
+      <div class="cardhead"><span class="lab">Passo 1</span><h2 id="c1">Escolher a conversão</h2></div>
+      <label class="sel" for="cdir">Converter
+        <select id="cdir">
+          <option value="w2p" selected>Word (.docx) para PDF</option>
+          <option value="p2w">PDF para Word (.docx)</option>
+          <option value="x2p">PowerPoint (.pptx) para PDF</option>
+        </select>
+      </label>
+      <div class="drop" id="cdrop" tabindex="0" role="button" aria-label="Escolher arquivo para converter">
+        <strong>Solte o arquivo aqui ou clique para escolher</strong>
+        <span id="cdropHint">docx</span>
+      </div>
+      <input id="cfile" type="file" accept=".docx" hidden>
+      <div class="file" id="cinfo" hidden></div>
+      <div class="msg err" id="cerr" role="alert"></div>
+      <div class="plan" id="cnote"></div>
+    </section>
+
+    <section class="card" aria-labelledby="c2" id="cgoCard" hidden>
+      <div class="cardhead"><span class="lab">Passo 2</span><h2 id="c2">Converter e salvar</h2></div>
+      <div class="row"><button class="primary" id="cgo">Converter</button></div>
+      <div class="msg" id="cstatus" role="status"></div>
+      <div class="result" id="cres" hidden>
+        <div class="stat"><span>Original</span><b id="cBefore">-</b></div>
+        <div class="stat hi"><span>Convertido</span><b id="cAfter">-</b></div>
+      </div>
+      <div class="row"><button class="primary" id="csave" hidden>Salvar arquivo convertido</button><span class="msg" id="csmsg" role="status"></span></div>
+    </section>
+  </div>
+
+  <div id="genPanel" class="panel" hidden>
+    <section class="card" aria-labelledby="gTitle">
+      <div class="cardhead"><span class="lab">Passo 1</span><h2 id="gTitle">Ferramenta</h2></div>
+      <div class="drop" id="gdrop" tabindex="0" role="button" aria-label="Escolher arquivos">
+        <strong>Solte os arquivos aqui ou clique para escolher</strong>
+        <span id="gHint"></span>
+      </div>
+      <input id="gfile" type="file" hidden>
+      <ul class="flist" id="glist"></ul>
+      <div class="msg err" id="gerr" role="alert"></div>
+    </section>
+    <section class="card" aria-labelledby="gT2" id="gAdj" hidden>
+      <div class="cardhead"><span class="lab">Passo 2</span><h2 id="gT2">Ajustar e executar</h2></div>
+      <div class="row" id="gopts"></div>
+      <div class="plan" id="gnote"></div>
+      <div class="row"><button class="primary" id="ggo">Executar</button></div>
+      <progress id="gbar" max="1" value="0" hidden></progress>
+      <div class="msg" id="gstatus" role="status"></div>
+      <div class="result" id="gres" hidden>
+        <div class="stat"><span>Original</span><b id="gBefore">-</b></div>
+        <div class="stat hi"><span>Resultado</span><b id="gAfter">-</b></div>
+      </div>
+      <div class="msg" id="gwarn"></div>
+      <div class="row"><button class="primary" id="gsave" hidden>Salvar resultado</button><span class="msg" id="gsmsg" role="status"></span></div>
+    </section>
+  </div>
+</main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const MB=1048576;
+const fmtMB=b=>(b/MB).toFixed(b<10*MB?2:1)+' MB';
+const fmtT=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s%60).padStart(2,'0')};
+let file=null,dur=0,vw=0,vh=0,out=null,outName='',busy=false,previewUrl=null;
+
+/* escolher arquivo */
+$('drop').onclick=()=>$('file').click();
+$('drop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}};
+['dragover','dragenter'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('over')}));
+$('drop').addEventListener('drop',e=>{if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0])});
+$('file').onchange=e=>{if(e.target.files[0])setFile(e.target.files[0])};
+
+function setFile(f){
+  $('err1').textContent='';
+  const okFile=/\.(mp4|mov|m4v)$/i.test(f.name)||(f.type&&f.type.startsWith('video/'));
+  if(!okFile){$('err1').textContent='Formato não aceito. Use um vídeo mp4 ou mov.';return}
+  $('err1').textContent='Lendo o vídeo...';
+  const v=document.createElement('video');v.preload='metadata';v.muted=true;v.playsInline=true;v.src=URL.createObjectURL(f);
+  const slow=setTimeout(()=>{if(file!==f)$('err1').textContent='Está demorando para ler o vídeo. Se nada acontecer, o celular pode não conseguir abrir esse formato. Tente um vídeo mp4 comum.'},8000);
+  v.onloadedmetadata=()=>{clearTimeout(slow);$('err1').textContent='';
+    file=f;dur=v.duration;vw=v.videoWidth;vh=v.videoHeight;out=null;
+    $('res3').hidden=true;$('status').textContent='';$('bar').hidden=true;
+    $('info').hidden=false;
+    $('info').innerHTML='<span><b></b></span><span>'+fmtMB(f.size)+'</span><span>Duração '+fmtT(dur)+'</span><span>'+vw+'×'+vh+'</span>';
+    $('info').querySelector('b').textContent=f.name;
+    $('adj').hidden=false;plan();
+  };
+  v.onerror=()=>{clearTimeout(slow);$('err1').textContent='Este navegador não conseguiu abrir o vídeo. Vídeos gravados em HEVC podem não abrir. Tente no Chrome, ou envie um mp4 comum.'};
+}
+
+/* plano: bitrate de vídeo para caber no tamanho máximo */
+const AUDIO_BPS=96000;
+function calc(){
+  const target=Math.max(5,+$('target').value||180);
+  const budget=target*MB*0.90*8;               /* 10% de margem para o container */
+  const total=budget/dur;
+  const video=Math.max(150000,total-AUDIO_BPS);
+  let h=Math.min(vh,1080);const sel=$('res').value;
+  if(sel==='auto'){ /* resolução proporcional ao bitrate disponível */
+    const cap=video>4e6?1080:video>2e6?720:video>8e5?480:360;h=Math.min(vh,cap);
+  }else h=Math.min(vh,+sel);
+  const w=Math.round(h*(vw/vh)/2)*2;
+  return {target,video,h:Math.round(h/2)*2,w};
+}
+function plan(){
+  if(!file)return;
+  const p=calc();$('badgeN').textContent=p.target;
+  document.querySelectorAll('[data-mb]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.mb===p.target)));
+  const already=file.size<p.target*MB;
+  $('plan').innerHTML=(already?'O vídeo original já tem menos de '+p.target+' MB. Você pode comprimir mesmo assim.<br>':'')+
+    'Saída em <b>'+p.w+'×'+p.h+'</b> com cerca de <b>'+(p.video/1e6).toFixed(2)+' Mbps</b> de vídeo.'+(p.target<=16&&dur>600?'<br>Vídeo longo para 16 MB: a qualidade da imagem fica bem baixa.':'');
+}
+$('target').oninput=plan;$('res').onchange=plan;
+document.querySelectorAll('[data-mb]').forEach(b=>b.onclick=()=>{$('target').value=b.dataset.mb;plan()});
+
+/* ---------- codificador MP4 (H.264 + AAC), compatível com WhatsApp ---------- */
+const CODECS=()=>window.AFMD_CODECS||{v:'avc1.640028',vm:'avc',a:'mp4a.40.2',am:'aac'};
+async function encodeMp4(file,v,p,prog,range){
+  const C=CODECS();
+  if(!(window.VideoEncoder&&window.AudioEncoder&&window.VideoFrame&&window.AudioData&&window.Mp4Muxer&&v.requestVideoFrameCallback))return null;
+  const fps=30,SR=48000;
+  const t0=range?range.start:0,t1=range?range.end:v.duration;
+  const vcfg={codec:C.v,width:p.w,height:p.h,bitrate:Math.round(p.video),framerate:fps,latencyMode:'quality'};
+  if(!(await VideoEncoder.isConfigSupported(vcfg)).supported)return null;
+  /* áudio: decodifica inteiro, com taxa fixa, e codifica com timestamps exatos */
+  let pcm=null,ch=0;
+  try{
+    const ac0=new AudioContext({sampleRate:SR});
+    const buf=await ac0.decodeAudioData(await file.arrayBuffer());
+    ch=Math.min(2,buf.numberOfChannels);pcm=[];for(let c=0;c<ch;c++)pcm.push(buf.getChannelData(c));
+    ac0.close();
+  }catch(_){pcm=null}
+  const acfg=pcm?{codec:C.a,sampleRate:SR,numberOfChannels:ch,bitrate:AUDIO_BPS}:null;
+  if(acfg&&!(await AudioEncoder.isConfigSupported(acfg)).supported)return null;
+  const target=new Mp4Muxer.ArrayBufferTarget();
+  const muxer=new Mp4Muxer.Muxer({target,video:{codec:C.vm,width:p.w,height:p.h,frameRate:fps},
+    audio:pcm?{codec:C.am,numberOfChannels:ch,sampleRate:SR}:undefined,fastStart:'in-memory',firstTimestampBehavior:'offset'});
+  let err=null;
+  const venc=new VideoEncoder({output:(c,m)=>muxer.addVideoChunk(c,m),error:e=>{err=e}});venc.configure(vcfg);
+  let aenc=null;
+  if(pcm){aenc=new AudioEncoder({output:(c,m)=>muxer.addAudioChunk(c,m),error:e=>{err=e}});aenc.configure(acfg)}
+  const s0=pcm?Math.floor(t0*SR):0,s1=pcm?Math.min(pcm[0].length,Math.floor(t1*SR)):0;let aPos=s0;
+  const feedAudio=sec=>{
+    if(!aenc)return;const end=Math.min(s1,Math.floor(sec*SR));
+    while(aPos<end){
+      const n=Math.min(8192,end-aPos),data=new Float32Array(n*ch);
+      for(let c=0;c<ch;c++)data.set(pcm[c].subarray(aPos,aPos+n),c*n);
+      const ad=new AudioData({format:'f32-planar',sampleRate:SR,numberOfFrames:n,numberOfChannels:ch,timestamp:Math.round((aPos-s0)/SR*1e6),data});
+      aenc.encode(ad);ad.close();aPos+=n;
+    }
+  };
+  const cv=document.createElement('canvas');cv.width=p.w;cv.height=p.h;const ctx=cv.getContext('2d');
+  if(t0>0){await new Promise(r=>{v.onseeked=r;v.currentTime=t0})}
+  let n=0,last=t0-1;
+  await new Promise((resolve,reject)=>{
+    const onFrame=(now,meta)=>{
+      if(err){reject(err);return}
+      const t=meta.mediaTime;
+      if(t>=t1-0.001){v.pause();resolve();return}
+      if(t>=t0-0.001&&t>last+1/(fps*1.5)&&venc.encodeQueueSize<30){
+        ctx.drawImage(v,0,0,p.w,p.h);
+        const f=new VideoFrame(cv,{timestamp:Math.round(Math.max(0,t-t0)*1e6),duration:Math.round(1e6/fps)});
+        venc.encode(f,{keyFrame:n%(fps*2)===0});f.close();n++;last=t;
+      }
+      feedAudio(t+0.5);prog(Math.max(0,t-t0),t1-t0);
+      if(!v.ended)v.requestVideoFrameCallback(onFrame);
+    };
+    v.onended=()=>resolve();
+    v.requestVideoFrameCallback(onFrame);
+    v.muted=true;v.playbackRate=1;
+    v.play().catch(reject);
+  });
+  if(err)throw err;
+  if(!n)throw new Error('Nenhum quadro de vídeo foi lido.');
+  feedAudio(1e9);
+  await venc.flush();if(aenc)await aenc.flush();
+  muxer.finalize();
+  return new Blob([target.buffer],{type:'video/mp4'});
+}
+
+/* plano B: gravação em tempo real (pode não abrir no WhatsApp) */
+async function recordLegacy(file,p,prog){
+  const v=document.createElement('video');v.src=URL.createObjectURL(file);v.playsInline=true;v.preload='auto';
+  await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=()=>no(new Error('Arquivo ilegível neste navegador.'))});
+  const ac=new (window.AudioContext||window.webkitAudioContext)();
+  const src=ac.createMediaElementSource(v),dest=ac.createMediaStreamDestination();src.connect(dest);
+  const cv=document.createElement('canvas');cv.width=p.w;cv.height=p.h;const ctx=cv.getContext('2d');
+  const stream=new MediaStream([...cv.captureStream(30).getVideoTracks(),...dest.stream.getAudioTracks()]);
+  const types=['video/mp4;codecs=avc1,mp4a.40.2','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  const mime=types.find(t=>MediaRecorder.isTypeSupported(t));
+  if(!mime)throw new Error('Este navegador não grava vídeo comprimido. Use o Chrome ou o Edge.');
+  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:Math.round(p.video),audioBitsPerSecond:AUDIO_BPS});
+  const chunks=[];rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  const stopped=new Promise(r=>rec.onstop=r);
+  let raf;const draw=()=>{ctx.drawImage(v,0,0,cv.width,cv.height);raf=requestAnimationFrame(draw)};
+  await ac.resume();rec.start(1000);await v.play();draw();
+  const tick=setInterval(()=>prog(v.currentTime,v.duration),500);
+  await new Promise(r=>v.onended=r);
+  clearInterval(tick);cancelAnimationFrame(raf);rec.stop();await stopped;ac.close();
+  return {blob:new Blob(chunks,{type:mime.split(';')[0]}),ext:mime.startsWith('video/mp4')?'mp4':'webm'};
+}
+
+/* comprimir */
+$('go').onclick=async()=>{
+  if(!file||busy)return;
+  busy=true;$('go').disabled=true;out=null;$('res3').hidden=true;
+  const p=calc();const bar=$('bar');bar.hidden=false;bar.value=0;$('status').className='msg';
+  const prog=(t,d)=>{bar.value=Math.min(1,t/d);$('status').textContent='Comprimindo... '+fmtT(t)+' de '+fmtT(d)};
+  let wake=null,legacy=false,ext='mp4';
+  try{ if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen') }catch(_){}
+  try{
+    const v=document.createElement('video');v.src=URL.createObjectURL(file);v.playsInline=true;v.preload='auto';
+    await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=()=>no(new Error('Arquivo ilegível neste navegador.'))});
+    let blob=null;
+    try{blob=await encodeMp4(file,v,p,prog)}catch(e){console.warn('encodeMp4',e);blob=null}
+    if(!blob){const r=await recordLegacy(file,p,prog);blob=r.blob;ext=r.ext;legacy=true}
+    out=blob;
+    outName=file.name.replace(/\.[^.]+$/,'')+'-comprimido.'+ext;
+    bar.value=1;
+    const saved=1-out.size/file.size;
+    $('mbBefore').textContent=fmtMB(file.size);$('mbAfter').textContent=fmtMB(out.size);
+    $('mbSaved').textContent=saved>0?Math.round(saved*100)+'%':'0%';
+    const ok=out.size<p.target*MB;
+    $('verdict').textContent=(ok?'O vídeo ficou abaixo de '+p.target+' MB.':'O vídeo passou de '+p.target+' MB. Diminua o tamanho máximo em uns 15% ou a resolução e comprima de novo.')+(legacy?' Este navegador não gera MP4 padrão: o vídeo pode travar ou não abrir no WhatsApp. Use o Chrome ou o Edge atualizado.':'');
+    $('verdict').className='msg '+(ok&&!legacy?'ok':'err');
+    if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=URL.createObjectURL(out);$('preview').src=previewUrl;
+    $('res3').hidden=false;$('status').textContent='Pronto! O vídeo comprimido está no Passo 3, logo abaixo, com o botão Salvar.';$('status').className='msg ok';
+    $('res3').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){$('status').textContent=e.message||'Não foi possível comprimir o vídeo.';$('status').className='msg err'}
+  try{wake&&wake.release()}catch(_){}
+  busy=false;$('go').disabled=false;
+};
+
+$('save').onclick=async()=>{
+  if(!out)return;
+  let d=null;try{d=await claude.use('downloads')}catch(_){}
+  if(!d){$('smsg').textContent='Salvar direto não está disponível aqui. Abra a página no navegador.';$('smsg').className='msg err';return}
+  try{await d.save({filename:outName,data:out});$('smsg').textContent='';}
+  catch(e){if(e&&e.code!=='declined'){$('smsg').textContent='Não foi possível salvar. Tente de novo.';$('smsg').className='msg err'}}
+};
+
+/* ---------- alternar vídeo / PDF ---------- */
+
+
+/* ---------- PDF ---------- */
+let pFile=null,pPages=0,pOut=null,pName='',pBusy=false;
+const QUAL={bal:{scale:1.5,q:.7},strong:{scale:1.2,q:.55},min:{scale:1,q:.4}};
+const libsOk=()=>window.pdfjsLib&&window.PDFLib;
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+$('pdrop').onclick=()=>$('pfile').click();
+$('pdrop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('pfile').click()}};
+['dragover','dragenter'].forEach(ev=>$('pdrop').addEventListener(ev,e=>{e.preventDefault();$('pdrop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('pdrop').addEventListener(ev,e=>{e.preventDefault();$('pdrop').classList.remove('over')}));
+$('pdrop').addEventListener('drop',e=>{if(e.dataTransfer.files[0])setPdf(e.dataTransfer.files[0])});
+$('pfile').onchange=e=>{if(e.target.files[0])setPdf(e.target.files[0])};
+
+async function setPdf(f){
+  $('perr').textContent='';
+  if(!(/\.pdf$/i.test(f.name)||f.type==='application/pdf')){$('perr').textContent='Formato não aceito. Use um arquivo PDF.';return}
+  if(!libsOk()){$('perr').textContent='Não foi possível carregar as ferramentas de PDF. Verifique a conexão e recarregue a página.';return}
+  $('perr').textContent='Lendo o PDF...';
+  try{
+    const doc=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;
+    pPages=doc.numPages;doc.destroy();
+  }catch(e){$('perr').textContent=(e&&e.name==='PasswordException')?'Este PDF tem senha. Remova a senha e tente de novo.':'Não foi possível abrir este PDF. Ele pode estar danificado.';return}
+  $('perr').textContent='';pFile=f;pOut=null;$('pres').hidden=true;$('pstatus').textContent='';$('pbar').hidden=true;
+  $('pinfo').hidden=false;$('pinfo').innerHTML='<span><b></b></span><span>'+fmtMB(f.size)+'</span><span>'+pPages+(pPages===1?' página':' páginas')+'</span>';
+  $('pinfo').querySelector('b').textContent=f.name;
+  $('padj').hidden=false;pPlan();
+}
+function pPlan(){
+  if(!pFile)return;
+  const t=Math.max(1,+$('ptarget').value||300);$('badgeN').textContent=t;
+  $('pqwrap').hidden=$('pmethod').value!=='raster';
+  const already=pFile.size<t*MB;
+  $('pplan').innerHTML=(already?'O PDF original já tem menos de '+t+' MB. Você pode comprimir mesmo assim.<br>':'')+
+    ($('pmethod').value==='raster'?'As páginas viram imagens JPEG: o texto deixa de ser selecionável, mas o tamanho cai bastante.':'O texto continua selecionável. A redução costuma ser pequena.');
+}
+$('ptarget').oninput=pPlan;$('pmethod').onchange=pPlan;
+
+$('pgo').onclick=async()=>{
+  if(!pFile||pBusy)return;
+  if(!libsOk()){$('pstatus').textContent='Ferramentas de PDF indisponíveis. Recarregue a página.';$('pstatus').className='msg err';return}
+  pBusy=true;$('pgo').disabled=true;pOut=null;$('pres').hidden=true;
+  const bar=$('pbar');bar.hidden=false;bar.value=0;$('pstatus').className='msg';
+  const t=Math.max(1,+$('ptarget').value||300);
+  let wake=null;try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen')}catch(_){}
+  try{
+    const ab=await pFile.arrayBuffer();let bytes;
+    if($('pmethod').value==='light'){
+      $('pstatus').textContent='Otimizando o PDF...';
+      const src=await PDFLib.PDFDocument.load(ab,{ignoreEncryption:true,updateMetadata:false});
+      const nd=await PDFLib.PDFDocument.create();
+      const pgs=await nd.copyPages(src,src.getPageIndices());pgs.forEach(p=>nd.addPage(p));
+      bytes=await nd.save({useObjectStreams:true});bar.value=1;
+    }else{
+      const {scale,q}=QUAL[$('pq').value];
+      const doc=await pdfjsLib.getDocument({data:new Uint8Array(ab)}).promise;
+      const nd=await PDFLib.PDFDocument.create();
+      for(let i=1;i<=doc.numPages;i++){
+        $('pstatus').textContent='Comprimindo página '+i+' de '+doc.numPages+'...';
+        const pg=await doc.getPage(i);const base=pg.getViewport({scale:1});
+        const sc=Math.min(scale,4096/Math.max(base.width,base.height));
+        const vp=pg.getViewport({scale:sc});
+        const cv=document.createElement('canvas');cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);
+        const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);
+        await pg.render({canvasContext:ctx,viewport:vp}).promise;
+        const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',q));
+        const img=await nd.embedJpg(new Uint8Array(await blob.arrayBuffer()));
+        const np=nd.addPage([base.width,base.height]);np.drawImage(img,{x:0,y:0,width:base.width,height:base.height});
+        cv.width=cv.height=0;pg.cleanup();bar.value=i/doc.numPages;
+      }
+      doc.destroy();
+      $('pstatus').textContent='Montando o PDF final...';
+      bytes=await nd.save({useObjectStreams:true});
+    }
+    pOut=new Blob([bytes],{type:'application/pdf'});
+    pName=pFile.name.replace(/\.[^.]+$/,'')+'-comprimido.pdf';
+    const saved=1-pOut.size/pFile.size;
+    $('pBefore').textContent=fmtMB(pFile.size);$('pAfter').textContent=fmtMB(pOut.size);
+    $('pSaved').textContent=saved>0?Math.round(saved*100)+'%':'0%';
+    const ok=pOut.size<=t*MB;
+    $('pverdict').textContent=pOut.size>=pFile.size?'O PDF comprimido ficou maior que o original. Use o original ou escolha uma qualidade menor.':
+      ok?'O PDF ficou com até '+t+' MB.':'O PDF passou de '+t+' MB. Escolha a qualidade Forte ou Mínima e comprima de novo.';
+    $('pverdict').className='msg '+(ok&&pOut.size<pFile.size?'ok':'err');
+    $('pres').hidden=false;$('pstatus').textContent='Pronto! O PDF comprimido está no Passo 3, logo abaixo, com o botão Salvar.';$('pstatus').className='msg ok';
+    $('pres').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){$('pstatus').textContent=(e&&e.message)?'Não foi possível comprimir o PDF: '+e.message:'Não foi possível comprimir o PDF.';$('pstatus').className='msg err'}
+  try{wake&&wake.release()}catch(_){}
+  pBusy=false;$('pgo').disabled=false;
+};
+$('psave').onclick=async()=>{
+  if(!pOut)return;
+  let d=null;try{d=await claude.use('downloads')}catch(_){}
+  if(!d){$('psmsg').textContent='Salvar direto não está disponível aqui. Abra a página no navegador.';$('psmsg').className='msg err';return}
+  try{await d.save({filename:pName,data:pOut});$('psmsg').textContent=''}
+  catch(e){if(e&&e.code!=='declined'){$('psmsg').textContent='Não foi possível salvar. Tente de novo.';$('psmsg').className='msg err'}}
+};
+
+/* ---------- Word ⇄ PDF ---------- */
+let cFile=null,cOut=null,cName='',cBusy=false;
+const WIN=/[^\x20-\x7E\xA0-\xFF‘’“”–—…•€™]/g;
+const clean=t=>t.replace(/[\u2028\u2029\u200B]/g,' ').replace(WIN,'?');
+function convNote(){
+  const d=$('cdir').value;
+  $('cfile').accept=d==='w2p'?'.docx':d==='x2p'?'.pptx':'.pdf,application/pdf';
+  $('cdropHint').textContent=d==='w2p'?'docx (Word)':d==='x2p'?'pptx (PowerPoint)':'pdf';
+  $('cnote').innerHTML=d==='w2p'?'Entram texto, títulos, listas, negrito, itálico e tabelas simples (cada linha da tabela vira uma linha de texto). Imagens, cabeçalhos, rodapés e fontes especiais não passam. O PDF fica com texto selecionável.':
+    d==='x2p'?'Cada slide vira uma página, com texto, imagens, formas, cores e fundo liso. Fontes, tabelas, gráficos, SmartArt, degradês, animações e efeitos não são reproduzidos fielmente, e as fontes viram Helvetica. Para fidelidade total, use Arquivo, Exportar, PDF no próprio PowerPoint. Arquivos .ppt antigos não são aceitos.':
+    'Só o texto é extraído, em parágrafos. Imagens, tabelas, colunas e a posição na página não passam. PDF escaneado (só imagem) não tem texto para converter.';
+}
+$('cdir').onchange=()=>{cFile=null;cOut=null;$('cinfo').hidden=true;$('cerr').textContent='';$('cgoCard').hidden=true;convNote()};
+convNote();
+$('cdrop').onclick=()=>$('cfile').click();
+$('cdrop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('cfile').click()}};
+['dragover','dragenter'].forEach(ev=>$('cdrop').addEventListener(ev,e=>{e.preventDefault();$('cdrop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('cdrop').addEventListener(ev,e=>{e.preventDefault();$('cdrop').classList.remove('over')}));
+$('cdrop').addEventListener('drop',e=>{if(e.dataTransfer.files[0])setConv(e.dataTransfer.files[0])});
+$('cfile').onchange=e=>{if(e.target.files[0])setConv(e.target.files[0])};
+function setConv(f){
+  const d=$('cdir').value;$('cerr').textContent='';
+  if(d==='w2p'&&/\.doc$/i.test(f.name)){$('cerr').textContent='Arquivos .doc (Word antigo) não são aceitos. Abra no Word e salve como .docx.';return}
+  if(d==='x2p'&&/\.ppt$/i.test(f.name)){$('cerr').textContent='Arquivos .ppt (PowerPoint antigo) não são aceitos. Abra no PowerPoint e salve como .pptx.';return}
+  const ok=d==='w2p'?/\.docx$/i.test(f.name):d==='x2p'?/\.pptx$/i.test(f.name):(/\.pdf$/i.test(f.name)||f.type==='application/pdf');
+  if(!ok){$('cerr').textContent=d==='w2p'?'Use um arquivo Word .docx.':d==='x2p'?'Use um arquivo PowerPoint .pptx.':'Use um arquivo PDF.';return}
+  cFile=f;cOut=null;
+  $('cinfo').hidden=false;$('cinfo').innerHTML='<span><b></b></span><span>'+fmtMB(f.size)+'</span>';$('cinfo').querySelector('b').textContent=f.name;
+  $('cgoCard').hidden=false;$('cres').hidden=true;$('csave').hidden=true;$('cstatus').textContent='';
+}
+
+async function docxToPdf(file){
+  if(!window.mammoth||!window.PDFLib)throw new Error('As ferramentas de conversão não carregaram. Recarregue a página.');
+  const res=await mammoth.convertToHtml({arrayBuffer:await file.arrayBuffer()});
+  const dom=new DOMParser().parseFromString('<body>'+res.value+'</body>','text/html').body;
+  const pdf=await PDFLib.PDFDocument.create();
+  const SF=PDFLib.StandardFonts;
+  const F={r:await pdf.embedFont(SF.Helvetica),b:await pdf.embedFont(SF.HelveticaBold),i:await pdf.embedFont(SF.HelveticaOblique),bi:await pdf.embedFont(SF.HelveticaBoldOblique)};
+  const W=595.28,H=841.89,M=56;let page=pdf.addPage([W,H]),y=H-M;
+  const fontOf=st=>st.bold&&st.italic?F.bi:st.bold?F.b:st.italic?F.i:F.r;
+  const runsOf=(node,st,out)=>{
+    node.childNodes.forEach(n=>{
+      if(n.nodeType===3){out.push({t:n.textContent,st})}
+      else if(n.nodeType===1){
+        const tg=n.tagName.toLowerCase();
+        if(tg==='br'){out.push({t:' ',st});return}
+        if(tg==='img'||tg==='ul'||tg==='ol'||tg==='table')return;
+        runsOf(n,{bold:st.bold||tg==='strong'||tg==='b',italic:st.italic||tg==='em'||tg==='i'},out);
+      }
+    });return out;
+  };
+  const para=(runs,size,o={})=>{
+    const indent=o.indent||0,gap=o.gap==null?6:o.gap,lh=size*1.35;
+    const words=[];
+    runs.forEach(r=>{clean(r.t).split(/\s+/).filter(Boolean).forEach(w=>words.push({w,f:fontOf(r.st)}))});
+    if(!words.length){y-=gap;return}
+    const x0=M+indent;let x=x0,line=[];
+    const flush=()=>{
+      if(y-lh<M){page=pdf.addPage([W,H]);y=H-M}
+      y-=lh;line.forEach(it=>page.drawText(it.w,{x:it.x,y:y+size*0.25,size,font:it.f}));line=[];x=x0;
+    };
+    let first=true;
+    words.forEach(it=>{
+      const ww=it.f.widthOfTextAtSize(it.w,size),sp=F.r.widthOfTextAtSize(' ',size);
+      if(x>x0&&x+sp+ww>W-M)flush();
+      if(x>x0)x+=sp;
+      if(first&&o.bullet){line.push({w:o.bullet,f:F.r,x:x0-14});first=false}
+      line.push({w:it.w,f:it.f,x});x+=ww;
+    });
+    if(line.length){if(first&&o.bullet)line.push({w:o.bullet,f:F.r,x:x0-14});flush()}
+    y-=gap;
+  };
+  const SIZES={h1:22,h2:18,h3:15,h4:13,h5:12,h6:11};
+  const block=(el,indent)=>{
+    const tg=el.tagName.toLowerCase();
+    if(SIZES[tg]){para(runsOf(el,{bold:true},[]),SIZES[tg],{gap:8,indent});return}
+    if(tg==='ul'||tg==='ol'){let k=1;[...el.children].forEach(li=>{
+      if(li.tagName.toLowerCase()!=='li')return;
+      para(runsOf(li,{},[]),11,{indent:indent+20,bullet:tg==='ul'?'•':(k++)+'.',gap:3});
+      [...li.children].forEach(c=>{if(/^(ul|ol)$/i.test(c.tagName))block(c,indent+20)});
+    });y-=4;return}
+    if(tg==='table'){el.querySelectorAll('tr').forEach(tr=>{
+      const cells=[...tr.children].map(c=>c.textContent.trim());para([{t:cells.join('   |   '),st:{}}],10.5,{indent,gap:2})});y-=6;return}
+    if(tg==='img'||tg==='figure')return;
+    para(runsOf(el,{},[]),11,{indent});
+  };
+  [...dom.children].forEach(el=>block(el,0));
+  if(pdf.getPageCount()===1&&y===H-M)para([{t:'(Documento sem texto)',st:{italic:true}}],11);
+  pdf.setProducer('AFMD');pdf.setCreator('AFMD');
+  return new Blob([await pdf.save()],{type:'application/pdf'});
+}
+
+async function pdfToDocx(file){
+  if(!window.pdfjsLib||!window.JSZip)throw new Error('As ferramentas de conversão não carregaram. Recarregue a página.');
+  const doc=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const esc=t=>t.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let body='',chars=0;
+  for(let i=1;i<=doc.numPages;i++){
+    $('cstatus').textContent='Lendo página '+i+' de '+doc.numPages+'...';
+    const tc=await (await doc.getPage(i)).getTextContent();
+    const lines=[];let cur=null;
+    tc.items.forEach(it=>{
+      if(!it.str&&!it.hasEOL)return;
+      const yy=it.transform[5],h=Math.abs(it.height)||it.transform[3]||11;
+      if(cur&&Math.abs(cur.y-yy)<=Math.max(2,h*.4)){cur.t+=(cur.t&&it.str&&!/\s$/.test(cur.t)&&!/^\s/.test(it.str)?' ':'')+it.str}
+      else{cur={y:yy,h,t:it.str};lines.push(cur)}
+    });
+    let para='',prev=null;const out=[];
+    lines.forEach(l=>{
+      const t=l.t.trim();if(!t)return;
+      if(prev&&((prev.y-l.y)>Math.max(prev.h,l.h)*1.7||Math.abs(prev.h-l.h)>Math.max(prev.h,l.h)*0.2||/^([•·\-–]|\d+[.)])\s/.test(t))){out.push(para);para=''}
+      para+=(para?' ':'')+t;prev=l;
+    });
+    if(para)out.push(para);
+    out.forEach(p=>{chars+=p.length;body+='<w:p><w:r><w:t xml:space="preserve">'+esc(p)+'</w:t></w:r></w:p>'});
+    if(i<doc.numPages)body+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+  }
+  doc.destroy();
+  if(chars<5)throw new Error('Este PDF não tem texto selecionável (parece escaneado). Não há o que converter.');
+  const z=new JSZip();
+  z.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+  z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+  z.file('word/document.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>');
+  return await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+
+
+/* ---------- PowerPoint (.pptx) para PDF ---------- */
+async function pptxToPdf(file,ui){
+  if(!window.JSZip||!window.PDFLib)throw new Error('As ferramentas de conversão não carregaram. Recarregue a página.');
+  let zip;try{zip=await JSZip.loadAsync(await file.arrayBuffer())}catch(_){throw new Error('Não foi possível abrir este arquivo. Ele precisa ser um .pptx válido.')}
+  const dirOf=p=>p.replace(/[^/]*$/,'');
+  const norm=p=>{const out=[];p.split('/').forEach(x=>{if(x==='..')out.pop();else if(x&&x!=='.')out.push(x)});return out.join('/')};
+  const resolve=(base,t)=>t.startsWith('/')?t.slice(1):norm(dirOf(base)+t);
+  const xmlCache={};
+  const readXml=async p=>{if(p in xmlCache)return xmlCache[p];const f=zip.file(p);if(!f)return xmlCache[p]=null;return xmlCache[p]=new DOMParser().parseFromString(await f.async('string'),'application/xml')};
+  const relsCache={};
+  const relsOf=async p=>{if(relsCache[p])return relsCache[p];const x=await readXml(p.replace(/([^/]+)$/,'_rels/$1.rels'));const m={};if(x)[...x.getElementsByTagName('Relationship')].forEach(r=>{m[r.getAttribute('Id')]={type:r.getAttribute('Type'),target:resolve(p,r.getAttribute('Target'))}});return relsCache[p]=m};
+  const kids=(el,name)=>[...el.children].filter(c=>c.tagName===name);
+  const kid=(el,name)=>el&&[...el.children].find(c=>c.tagName===name);
+  const find=(el,path)=>{let c=el;for(const n of path.split('/')){c=kid(c,n);if(!c)return null}return c};
+  const pres=await readXml('ppt/presentation.xml');if(!pres)throw new Error('Arquivo .pptx inválido.');
+  const sz=pres.getElementsByTagName('p:sldSz')[0];
+  const EMU=12700,W=(+sz.getAttribute('cx'))/EMU,H=(+sz.getAttribute('cy'))/EMU;
+  const presRels=await relsOf('ppt/presentation.xml');
+  const slidePaths=[...pres.getElementsByTagName('p:sldId')].map(e=>presRels[e.getAttribute('r:id')]&&presRels[e.getAttribute('r:id')].target).filter(Boolean);
+  if(!slidePaths.length)throw new Error('Não encontrei slides neste arquivo.');
+  /* tema e cores */
+  const masterPath=Object.values(presRels).find(r=>/\/slideMaster$/.test(r.type)).target;
+  const master=await readXml(masterPath),masterRels=await relsOf(masterPath);
+  const themePath=Object.values(masterRels).find(r=>/\/theme$/.test(r.type));
+  const theme=themePath?await readXml(themePath.target):null;
+  const TH={};
+  if(theme)['dk1','lt1','dk2','lt2','accent1','accent2','accent3','accent4','accent5','accent6','hlink','folHlink'].forEach(n=>{
+    const e=theme.getElementsByTagName('a:'+n)[0];if(!e)return;const c=e.children[0];if(!c)return;
+    TH[n]='#'+(c.getAttribute('val')&&c.tagName==='a:srgbClr'?c.getAttribute('val'):c.getAttribute('lastClr')||'000000')});
+  const cm=master.getElementsByTagName('p:clrMap')[0];
+  const CM={};if(cm)[...cm.attributes].forEach(a=>CM[a.name]=a.value);
+  const schemeHex=v=>{const k=CM[v]||v;return TH[k]||TH[{tx1:'dk1',bg1:'lt1',tx2:'dk2',bg2:'lt2'}[v]]||'#000000'};
+  const hex2rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255);
+  const rgb2hsl=([r,g,b])=>{const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s=0,l=(mx+mn)/2;if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h/=6}return[h,s,l]};
+  const hsl2rgb=([h,s,l])=>{if(s===0)return[l,l,l];const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q,f=t=>{t=(t+1)%1;return t<1/6?p+(q-p)*6*t:t<1/2?q:t<2/3?p+(q-p)*(2/3-t)*6:p};return[f(h+1/3),f(h),f(h-1/3)]};
+  const colorOf=fillEl=>{ /* fillEl: elemento solidFill ou o pai que contém a cor */
+    if(!fillEl)return null;const c=[...fillEl.children].find(x=>/^a:(srgbClr|schemeClr|sysClr|prstClr)$/.test(x.tagName));if(!c)return null;
+    let hex=c.tagName==='a:srgbClr'?'#'+c.getAttribute('val'):c.tagName==='a:schemeClr'?schemeHex(c.getAttribute('val')):c.tagName==='a:sysClr'?'#'+(c.getAttribute('lastClr')||'000000'):'#000000';
+    let rgb=hex2rgb(hex);
+    [...c.children].forEach(m=>{const v=(+m.getAttribute('val'))/100000;
+      if(m.tagName==='a:lumMod'||m.tagName==='a:lumOff'||m.tagName==='a:tint'||m.tagName==='a:shade'){const hl=rgb2hsl(rgb);
+        if(m.tagName==='a:lumMod')hl[2]=Math.min(1,hl[2]*v);if(m.tagName==='a:lumOff')hl[2]=Math.min(1,hl[2]+v);
+        if(m.tagName==='a:tint')hl[2]=Math.min(1,hl[2]+(1-hl[2])*(1-v));if(m.tagName==='a:shade')hl[2]=hl[2]*v;rgb=hsl2rgb(hl)}});
+    return rgb;
+  };
+  const solid=el=>{const sf=kid(el,'a:solidFill');if(sf)return colorOf(sf);const gf=kid(el,'a:gradFill');if(gf){const gs=gf.getElementsByTagName('a:gs')[0];return gs?colorOf(gs):null}return null};
+  const pdf=await PDFLib.PDFDocument.create();const SF=PDFLib.StandardFonts;
+  const F={r:await pdf.embedFont(SF.Helvetica),b:await pdf.embedFont(SF.HelveticaBold),i:await pdf.embedFont(SF.HelveticaOblique),bi:await pdf.embedFont(SF.HelveticaBoldOblique)};
+  const fontOf=(b,i)=>b&&i?F.bi:b?F.b:i?F.i:F.r;
+  const imgCache={};
+  const embedImage=async path=>{
+    if(path in imgCache)return imgCache[path];const f=zip.file(path);if(!f)return imgCache[path]=null;
+    const bytes=await f.async('uint8array');let img=null;
+    try{
+      if(/\.png$/i.test(path))img=await pdf.embedPng(bytes);
+      else if(/\.jpe?g$/i.test(path))img=await pdf.embedJpg(bytes);
+      else{const bmp=await createImageBitmap(new Blob([bytes]));const cv=document.createElement('canvas');cv.width=bmp.width;cv.height=bmp.height;cv.getContext('2d').drawImage(bmp,0,0);
+        img=await pdf.embedPng(new Uint8Array(await (await new Promise(r=>cv.toBlob(r,'image/png'))).arrayBuffer()))}
+    }catch(_){img=null}
+    return imgCache[path]=img;
+  };
+  const skipped={tables:0,charts:0,other:0};
+  const phKey=sp=>{const ph=sp.getElementsByTagName('p:ph')[0];return ph?{type:ph.getAttribute('type')||'body',idx:ph.getAttribute('idx')}:null};
+  const findPh=(tree,key)=>{if(!tree||!key)return null;const all=[...tree.getElementsByTagName('p:sp')];
+    return all.find(sp=>{const k=phKey(sp);return k&&((key.idx&&k.idx===key.idx)||(k.type===key.type)||(key.type==='ctrTitle'&&k.type==='title')||(key.type==='subTitle'&&k.type==='body'))})||null};
+  const xfrmOf=sp=>{const x=sp.getElementsByTagName('a:xfrm')[0];if(!x||x.parentElement.tagName==='p:grpSpPr'&&false)return null;const o=kid(x,'a:off'),e=kid(x,'a:ext');return o&&e?{x:+o.getAttribute('x'),y:+o.getAttribute('y'),w:+e.getAttribute('cx'),h:+e.getAttribute('cy')}:null};
+  const ownXfrm=sp=>{const spPr=kid(sp,'p:spPr');const x=spPr&&kid(spPr,'a:xfrm');if(!x)return null;const o=kid(x,'a:off'),e=kid(x,'a:ext');return o&&e?{x:+o.getAttribute('x'),y:+o.getAttribute('y'),w:+e.getAttribute('cx'),h:+e.getAttribute('cy')}:null};
+  const lvlProp=(lst,lvl,attr,inRpr)=>{if(!lst)return null;const l=kid(lst,'a:lvl'+(lvl+1)+'pPr');if(!l)return null;const t=inRpr?kid(l,'a:defRPr'):l;return t&&t.getAttribute(attr)};
+  const lvlColor=(lst,lvl)=>{if(!lst)return null;const l=kid(lst,'a:lvl'+(lvl+1)+'pPr'),d=l&&kid(l,'a:defRPr');return d?solid(d):null};
+  const styleOf=(kind)=>{const ts=master.getElementsByTagName('p:txStyles')[0];if(!ts)return null;return kid(ts,kind==='title'?'p:titleStyle':kind==='body'?'p:bodyStyle':'p:otherStyle')};
+  const baseSizes={title:40,ctrTitle:44,subTitle:24,body:24,other:18};
+
+  const bgOf=async(tree)=>{const bg=tree.getElementsByTagName('p:bg')[0];if(!bg)return null;
+    const bp=kid(bg,'p:bgPr');if(bp){const c=solid(bp);if(c)return {color:c};return null}
+    const br=kid(bg,'p:bgRef');if(br){const c=colorOf(br);if(c)return {color:c}}return null};
+
+  for(let si=0;si<slidePaths.length;si++){
+    ui.prog(si/slidePaths.length,'Convertendo slide '+(si+1)+' de '+slidePaths.length+'...');
+    const spath=slidePaths[si],slide=await readXml(spath),srels=await relsOf(spath);
+    const lay=Object.values(srels).find(r=>/\/slideLayout$/.test(r.type));const layout=lay?await readXml(lay.target):null;
+    const page=pdf.addPage([W,H]);
+    const bg=(await bgOf(slide))||(layout&&await bgOf(layout))||(await bgOf(master))||{color:[1,1,1]};
+    page.drawRectangle({x:0,y:0,width:W,height:H,color:PDFLib.rgb(...bg.color)});
+    const tree=slide.getElementsByTagName('p:spTree')[0];
+    const drawTree=async(parent,tf)=>{
+      for(const el of [...parent.children]){
+        const tg=el.tagName;
+        if(tg==='p:grpSp'){
+          const x=el.getElementsByTagName('a:xfrm')[0],o=kid(x,'a:off'),e=kid(x,'a:ext'),co=kid(x,'a:chOff'),ce=kid(x,'a:chExt');
+          if(!o||!e||!co||!ce)continue;
+          const kx=(+e.getAttribute('cx'))/(+ce.getAttribute('cx')||1),ky=(+e.getAttribute('cy'))/(+ce.getAttribute('cy')||1);
+          await drawTree(el,{ax:tf.ax*kx,bx:tf.bx+tf.ax*(+o.getAttribute('x')-(+co.getAttribute('x'))*kx),ay:tf.ay*ky,by:tf.by+tf.ay*(+o.getAttribute('y')-(+co.getAttribute('y'))*ky)});
+        }else if(tg==='p:sp'||tg==='p:pic'||tg==='p:cxnSp'){
+          await drawShape(el,tf);
+        }else if(tg==='p:graphicFrame'){
+          if(el.getElementsByTagName('a:tbl')[0])skipped.tables++;else if(el.getElementsByTagName('c:chart')[0])skipped.charts++;else skipped.other++;
+        }
+      }
+    };
+    const drawShape=async(el,tf)=>{
+      const key=el.tagName==='p:sp'?phKey(el):null;
+      const layPh=key&&layout?findPh(layout,key):null,masPh=key?findPh(master,key):null;
+      let xf=ownXfrm(el)||(layPh&&ownXfrm(layPh))||(masPh&&ownXfrm(masPh));
+      if(!xf)return;
+      const X=(tf.bx+tf.ax*xf.x)/EMU,Wd=tf.ax*xf.w/EMU,Hh=tf.ay*xf.h/EMU,Y=(tf.by+tf.ay*xf.y)/EMU;
+      const px=X,py=H-Y-Hh;
+      const spPr=kid(el,'p:spPr');
+      if(el.tagName==='p:pic'){
+        const blip=el.getElementsByTagName('a:blip')[0],rid=blip&&blip.getAttribute('r:embed');
+        if(rid&&srels[rid]){const img=await embedImage(srels[rid].target);if(img)page.drawImage(img,{x:px,y:py,width:Wd,height:Hh})}
+        return;
+      }
+      const geom=spPr&&kid(spPr,'a:prstGeom'),prst=geom&&geom.getAttribute('prst');
+      const fill=spPr&&solid(spPr);
+      const ln=spPr&&kid(spPr,'a:ln'),lnc=ln&&solid(ln),lnw=ln&&ln.getAttribute('w')?(+ln.getAttribute('w'))/EMU:0.75;
+      if(el.tagName==='p:cxnSp'){
+        if(lnc)page.drawLine({start:{x:px,y:py+Hh},end:{x:px+Wd,y:py},thickness:lnw,color:PDFLib.rgb(...lnc)});return;
+      }
+      const hasNoFill=spPr&&kid(spPr,'a:noFill');
+      if((fill&&!hasNoFill)||(lnc&&!(ln&&kid(ln,'a:noFill')))){
+        const opts={color:fill&&!hasNoFill?PDFLib.rgb(...fill):undefined,borderColor:lnc&&!(ln&&kid(ln,'a:noFill'))?PDFLib.rgb(...lnc):undefined,borderWidth:lnc&&!(ln&&kid(ln,'a:noFill'))?lnw:0};
+        if(prst==='ellipse')page.drawEllipse({x:px+Wd/2,y:py+Hh/2,xScale:Wd/2,yScale:Hh/2,...opts});
+        else page.drawRectangle({x:px,y:py,width:Wd,height:Hh,...opts});
+      }
+      const tb=kid(el,'p:txBody');if(!tb)return;
+      /* texto */
+      const bodyPr=kid(tb,'a:bodyPr'),lstOwn=kid(tb,'a:lstStyle');
+      const layTb=layPh&&kid(layPh,'p:txBody'),masTb=masPh&&kid(masPh,'p:txBody');
+      const lstLay=layTb&&kid(layTb,'a:lstStyle'),lstMas=masTb&&kid(masTb,'a:lstStyle');
+      const kind=key?(/title/i.test(key.type)?'title':/^(body|subTitle|obj)$/.test(key.type)?'body':'other'):'other';
+      const lstSty=styleOf(kind);
+      const chain=[lstOwn,lstLay,lstMas,lstSty];
+      const get=(lvl,attr,rpr)=>{for(const l of chain){const v=lvlProp(l,lvl,attr,rpr);if(v!=null&&v!=='')return v}return null};
+      const getColor=lvl=>{for(const l of chain){const c=lvlColor(l,lvl);if(c)return c}return null};
+      const bpGet=a=>(bodyPr&&bodyPr.getAttribute(a))||(layTb&&kid(layTb,'a:bodyPr')&&kid(layTb,'a:bodyPr').getAttribute(a))||(masTb&&kid(masTb,'a:bodyPr')&&kid(masTb,'a:bodyPr').getAttribute(a))||null;
+      const lI=((+bpGet('lIns'))||(bpGet('lIns')==='0'?0:91440))/EMU,rI=((+bpGet('rIns'))||(bpGet('rIns')==='0'?0:91440))/EMU,tI=((+bpGet('tIns'))||(bpGet('tIns')==='0'?0:45720))/EMU,bI=((+bpGet('bIns'))||(bpGet('bIns')==='0'?0:45720))/EMU;
+      const anchor=bpGet('anchor')||'t';
+      const naf=bodyPr&&kid(bodyPr,'a:normAutofit');const fsAttr=naf&&naf.getAttribute('fontScale');const baseScale=fsAttr?(+fsAttr)/100000:1;
+      const paras=kids(tb,'a:p').map(p=>{
+        const pPr=kid(p,'a:pPr'),lvl=pPr&&pPr.getAttribute('lvl')?+pPr.getAttribute('lvl'):0;
+        const algn=(pPr&&pPr.getAttribute('algn'))||get(lvl,'algn',false)||'l';
+        const hasBu=pPr&&kid(pPr,'a:buChar');const noBu=pPr&&kid(pPr,'a:buNone');
+        const styleBu=chain.some(l=>{const lv=l&&kid(l,'a:lvl'+(lvl+1)+'pPr');return lv&&kid(lv,'a:buChar')});
+        const bullet=!noBu&&(hasBu||(!pPr||!kid(pPr,'a:buNone'))&&styleBu&&kind==='body')?'•':null;
+        const marL=(pPr&&pPr.getAttribute('marL')!=null?+pPr.getAttribute('marL'):+(get(lvl,'marL',false)||0))/EMU;
+        const indent=(pPr&&pPr.getAttribute('indent')!=null?+pPr.getAttribute('indent'):+(get(lvl,'indent',false)||0))/EMU;
+        const runs=[];
+        [...p.children].forEach(r=>{
+          if(r.tagName==='a:r'||r.tagName==='a:fld'){const t=kid(r,'a:t');if(!t)return;const rp=kid(r,'a:rPr');
+            const sz=(rp&&rp.getAttribute('sz'))||get(lvl,'sz',true);
+            const b=rp&&rp.getAttribute('b')!=null?rp.getAttribute('b')==='1':get(lvl,'b',true)==='1';
+            const i=rp&&rp.getAttribute('i')!=null?rp.getAttribute('i')==='1':get(lvl,'i',true)==='1';
+            const col=(rp&&solid(rp))||getColor(lvl)||colorOf({children:[{tagName:'a:schemeClr',getAttribute:()=> 'tx1',children:[]}]});
+            runs.push({t:t.textContent,size:sz?(+sz)/100:null,b,i,col})}
+          else if(r.tagName==='a:br')runs.push({t:'\n',br:true});
+        });
+        const eRp=kid(p,'a:endParaRPr');
+        return {lvl,algn,bullet,marL:marL||(bullet?(lvl+1)*18:lvl*18),indent:indent||(bullet?-18:0),runs,endSize:eRp&&eRp.getAttribute('sz')?(+eRp.getAttribute('sz'))/100:null};
+      });
+      const defSize=kind==='title'?(key&&key.type==='ctrTitle'?44:40):kind==='body'?24:18;
+      const Wtext=Math.max(10,Wd-lI-rI),Hbox=Math.max(10,Hh-tI-bI);
+      const layoutAt=scale=>{
+        let total=0;const out=[];
+        paras.forEach(p=>{
+          const words=[];let maxSize=0;
+          p.runs.forEach(r=>{const size=(r.size||defSize)*scale;maxSize=Math.max(maxSize,size);
+            if(r.br){words.push({br:true});return}
+            clean(r.t).split(/(\s+)/).filter(x=>x!=='').forEach(w=>words.push({w,f:fontOf(r.b,r.i),size,col:r.col||[0,0,0],sp:/^\s+$/.test(w)}))});
+          if(!maxSize)maxSize=(p.endSize||defSize)*scale;
+          const lh=maxSize*1.2;const lines=[];let cur=[],cw=0;const avail=Wtext-p.marL;
+          const pushLine=()=>{lines.push({items:cur,w:cw,lh});cur=[];cw=0};
+          words.forEach(w=>{
+            if(w.br){pushLine();return}
+            const ww=w.f.widthOfTextAtSize(w.w,w.size);
+            if(!w.sp&&cw+ww>avail+p.indent*-0&&cur.length){pushLine()}
+            if(w.sp&&!cur.length)return;
+            cur.push({...w,ww});cw+=ww;
+          });
+          pushLine();
+          out.push({p,lines,maxSize});total+=lines.length*lh+maxSize*0.2;
+        });
+        return {out,total};
+      };
+      let scale=baseScale,res=layoutAt(scale);
+      while(res.total>Hbox&&scale>0.5){scale-=0.05;res=layoutAt(scale)}
+      let y=anchor==='ctr'?(Hbox-res.total)/2:anchor==='b'?(Hbox-res.total):0;
+      y=Math.max(0,y);
+      res.out.forEach(po=>{
+        po.lines.forEach((ln,li)=>{
+          y+=ln.lh;
+          const baseY=py+Hh-tI-y+ln.lh*0.22;
+          let startX=px+lI+po.p.marL+(li===0&&!po.p.bullet?po.p.indent:0);
+          const avail=Wtext-po.p.marL;
+          let off=0;if(po.p.algn==='ctr')off=(avail-ln.w)/2;else if(po.p.algn==='r')off=avail-ln.w;
+          if(li===0&&po.p.bullet){const c=ln.items[0]?ln.items[0].col:[0,0,0];page.drawText('•',{x:px+lI+po.p.marL+po.p.indent,y:baseY,size:po.maxSize*0.9,font:F.r,color:PDFLib.rgb(...c)})}
+          let x=startX+Math.max(0,off);
+          ln.items.forEach(it=>{if(!it.sp)page.drawText(it.w,{x,y:baseY,size:it.size,font:it.f,color:PDFLib.rgb(...it.col)});x+=it.ww});
+        });
+        y+=po.maxSize*0.2;
+      });
+    };
+    await drawTree(tree,{ax:1,bx:0,ay:1,by:0});
+  }
+  pdf.setProducer('TRANSFILES');pdf.setCreator('TRANSFILES');
+  const notes=[];
+  if(skipped.tables)notes.push(skipped.tables+' tabela(s)');if(skipped.charts)notes.push(skipped.charts+' gráfico(s)');if(skipped.other)notes.push(skipped.other+' objeto(s) como SmartArt');
+  return {blob:new Blob([await pdf.save()],{type:'application/pdf'}),notes};
+}
+
+$('cgo').onclick=async()=>{
+  if(!cFile||cBusy)return;
+  cBusy=true;$('cgo').disabled=true;cOut=null;$('cres').hidden=true;$('csave').hidden=true;$('cstatus').className='msg';$('cstatus').textContent='Convertendo...';
+  const d=$('cdir').value;let extra='';
+  try{
+    if(d==='x2p'){const r=await pptxToPdf(cFile,{prog:(f,t)=>{$('cstatus').textContent=t}});cOut=r.blob;if(r.notes.length)extra=' Não foram convertidos: '+r.notes.join(', ')+'.'}
+    else cOut=d==='w2p'?await docxToPdf(cFile):await pdfToDocx(cFile);
+    cName=cFile.name.replace(/\.[^.]+$/,'')+(d==='p2w'?'.docx':'.pdf');
+    $('cBefore').textContent=fmtMB(cFile.size);$('cAfter').textContent=fmtMB(cOut.size);
+    $('cres').hidden=false;$('csave').hidden=false;
+    $('cstatus').textContent='Pronto! Salve o arquivo convertido abaixo e confira o resultado antes de usar.'+extra;$('cstatus').className='msg ok';
+  }catch(e){$('cstatus').textContent=(e&&e.message)||'Não foi possível converter o arquivo.';$('cstatus').className='msg err'}
+  cBusy=false;$('cgo').disabled=false;
+};
+$('csave').onclick=async()=>{
+  if(!cOut)return;
+  let d=null;try{d=await claude.use('downloads')}catch(_){}
+  if(!d){$('csmsg').textContent='Salvar direto não está disponível aqui. Abra a página no navegador.';$('csmsg').className='msg err';return}
+  try{await d.save({filename:cName,data:cOut});$('csmsg').textContent=''}
+  catch(e){if(e&&e.code!=='declined'){$('csmsg').textContent='Não foi possível salvar. Tente de novo.';$('csmsg').className='msg err'}}
+};
+
+/* ============ TRANSFILES: navegação e ferramentas ============ */
+const TOOLS_BY_CAT={
+  vid:[['vid_compress','Comprimir vídeo'],['vid_cut','Cortar ou converter para MP4']],
+  aud:[['aud_conv','Extrair, cortar ou converter áudio']],
+  img:[['img_conv','Converter, comprimir e redimensionar']],
+  pdf:[['pdf_compress','Comprimir PDF'],['pdf_merge','Juntar PDFs'],['pdf_split','Dividir PDF'],['pdf_extract','Extrair páginas'],['pdf_rotate','Girar páginas']],
+  doc:[['doc_conv','Word, PowerPoint e PDF']]
+};
+const HERO={
+  vid_compress:'Deixe seu vídeo mp4 ou mov com menos de 180 MB, direto no navegador. O arquivo não sai do seu computador.',
+  vid_cut:'Corte um trecho ou converta qualquer vídeo para MP4 (H.264 e AAC), o formato que abre em qualquer lugar.',
+  aud_conv:'Tire o áudio de um vídeo, corte um trecho ou converta um áudio, sem sair do navegador.',
+  img_conv:'Converta entre JPG, PNG e WebP, comprima e redimensione fotos. Você escolhe a qualidade.',
+  pdf_compress:'Reduza um PDF para até 300 MB, direto no navegador. O arquivo não sai do seu computador.',
+  pdf_merge:'Una vários PDFs em um só. As páginas são copiadas sem recompressão, então o texto e a qualidade ficam iguais.',
+  pdf_split:'Divida um PDF em vários arquivos. As páginas são copiadas sem recompressão.',
+  pdf_extract:'Extraia só as páginas que você quer em um novo PDF, sem perder qualidade.',
+  pdf_rotate:'Gire todas ou algumas páginas do PDF sem recomprimir nada.',
+  doc_conv:'Converta Word e PowerPoint em PDF e PDF em Word, direto no navegador. O arquivo não sai do seu computador.'
+};
+let cat='vid',curTool='vid_compress';
+function setCat(c){
+  cat=c;
+  Object.keys(TOOLS_BY_CAT).forEach(k=>$('tab_'+k).setAttribute('aria-pressed',String(k===c)));
+  $('toolSel').innerHTML=TOOLS_BY_CAT[c].map(([id,t])=>'<option value="'+id+'">'+t+'</option>').join('');
+  $('chips').hidden=TOOLS_BY_CAT[c].length<2;
+  $('chips').innerHTML=TOOLS_BY_CAT[c].map(([id,t])=>'<button class="chip" data-tool="'+id+'" aria-pressed="false">'+t+'</button>').join('');
+  $('chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+  $('heroCat').textContent={vid:'Vídeo',aud:'Áudio',img:'Imagens',pdf:'PDF',doc:'Word e PDF'}[c];
+  setTool(TOOLS_BY_CAT[c][0][0]);
+}
+function setTool(id){
+  curTool=id;$('toolSel').value=id;
+  const legacy={vid_compress:'vidPanel',pdf_compress:'pdfPanel',doc_conv:'convPanel'};
+  ['vidPanel','pdfPanel','convPanel','genPanel'].forEach(p=>$(p).hidden=true);
+  $(legacy[id]||'genPanel').hidden=false;
+  $('heroP').textContent=HERO[id];
+  $('heroH').textContent=(TOOLS_BY_CAT[cat].find(x=>x[0]===id)||[0,''])[1];
+  $('chips').querySelectorAll('.chip').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tool===id)));
+  const showBadge=id==='vid_compress'||id==='pdf_compress';
+  document.querySelector('.badge').hidden=!showBadge;
+  if(id==='vid_compress')$('badgeN').textContent=+$('target').value||180;
+  if(id==='pdf_compress')$('badgeN').textContent=+$('ptarget').value||300;
+  if(!legacy[id])renderTool(id);
+}
+Object.keys(TOOLS_BY_CAT).forEach(k=>$('tab_'+k).onclick=()=>setCat(k));
+$('toolSel').onchange=()=>setTool($('toolSel').value);
+
+/* ---------- utilidades ---------- */
+function parseTime(str,def){
+  const t=String(str||'').trim();if(!t)return def;
+  const parts=t.split(':').map(Number);if(parts.some(x=>!isFinite(x)||x<0))throw new Error('Tempo inválido: "'+t+'". Use segundos (90) ou minutos:segundos (1:30).');
+  return parts.reduce((a,x)=>a*60+x,0);
+}
+function parseRanges(str,max){
+  const out=[];
+  String(str).split(',').map(x=>x.trim()).filter(Boolean).forEach(part=>{
+    const m=part.match(/^(\d*)\s*-\s*(\d*)$/);
+    if(m){const a=m[1]?+m[1]:1,b=m[2]?+m[2]:max;if(a<1||b>max||a>b)throw new Error('Intervalo inválido: '+part+' (o PDF tem '+max+' páginas).');for(let i=a;i<=b;i++)out.push(i-1)}
+    else if(/^\d+$/.test(part)){const n=+part;if(n<1||n>max)throw new Error('A página '+n+' não existe (o PDF tem '+max+' páginas).');out.push(n-1)}
+    else throw new Error('Não entendi "'+part+'". Use algo como 1-3,5.');
+  });
+  if(!out.length)throw new Error('Informe as páginas.');
+  return out;
+}
+const baseName=f=>f.name.replace(/\.[^.]+$/,'');
+async function loadPdf(f){
+  try{return await PDFLib.PDFDocument.load(await f.arrayBuffer())}
+  catch(e){throw new Error(/encrypt/i.test(e.message||'')?'O PDF "'+f.name+'" tem senha. Remova a senha e tente de novo.':'Não foi possível abrir o PDF "'+f.name+'". Ele pode estar danificado.')}
+}
+async function zipOf(files){const z=new JSZip();files.forEach(f=>z.file(f.name,f.blob));return await z.generateAsync({type:'blob',mimeType:'application/zip'})}
+const pdfNote='Atenção: assinaturas digitais do PDF deixam de valer quando o arquivo é alterado. Formulários e marcadores podem não ser mantidos.';
+
+/* ---------- definição das ferramentas ---------- */
+const SEL=(id,label,opts,def)=>({id,label,type:'select',opts,def});
+const TXT=(id,label,ph,def)=>({id,label,type:'text',ph,def});
+const NUM=(id,label,ph,def,attrs)=>({id,label,type:'number',ph,def,attrs});
+const TOOLS={
+  vid_cut:{title:'Cortar ou converter vídeo',hint:'mp4, mov, webm',accept:'video/*,.mp4,.mov,.m4v,.webm',multiple:false,
+    opts:[TXT('start','Início (opcional)','0:00',''),TXT('end','Fim (opcional)','1:30',''),SEL('q','Qualidade',[['alta','Alta (arquivo maior)'],['boa','Boa (equilibrada)']],'alta')],
+    note:'Deixe início e fim vazios para só converter para MP4. O vídeo é regravado em tempo real, com qualidade alta para não estragar a imagem.',
+    async run(files,o,ui){
+      const f=files[0],v=document.createElement('video');v.src=URL.createObjectURL(f);v.playsInline=true;v.preload='auto';
+      await new Promise((ok,no)=>{v.onloadedmetadata=ok;v.onerror=()=>no(new Error('Este navegador não conseguiu abrir o vídeo.'))});
+      const s=parseTime(o.start,0),e=parseTime(o.end,v.duration);
+      if(s>=v.duration||e<=s)throw new Error('O trecho é inválido. O vídeo tem '+fmtT(v.duration)+'.');
+      const hh=Math.min(v.videoHeight,1080),h=Math.round(hh/2)*2,w=Math.round(h*(v.videoWidth/v.videoHeight)/2)*2;
+      const bpp=o.q==='alta'?0.1:0.065,video=Math.max(1.2e6,Math.min(16e6,w*h*30*bpp));
+      const blob=await encodeMp4(f,v,{w,h,video},(t,d)=>ui.prog(t/d,'Processando '+fmtT(t)+' de '+fmtT(d)),{start:s,end:Math.min(e,v.duration)});
+      if(!blob)throw new Error('Este navegador não gera MP4 com H.264 e AAC. Use o Chrome ou o Edge atualizado.');
+      return {blob,name:baseName(f)+(s>0||e<v.duration?'-corte':'-convertido')+'.mp4'};
+    }},
+  aud_conv:{title:'Extrair, cortar ou converter áudio',hint:'áudio ou vídeo: mp3, wav, m4a, mp4, mov, webm',accept:'audio/*,video/*,.mp3,.wav,.m4a,.mp4,.mov,.webm,.ogg',multiple:false,
+    opts:[TXT('start','Início (opcional)','0:00',''),TXT('end','Fim (opcional)','1:30',''),SEL('br','Qualidade',[['64000','Voz (64 kbps)'],['128000','Boa (128 kbps)'],['192000','Alta (192 kbps)']],'128000')],
+    note:'O áudio sai em um arquivo MP4 só de áudio (AAC), que abre no celular, no WhatsApp e no computador. A conversão é rápida e não depende do tempo do áudio.',
+    async run(files,o,ui){
+      if(!(window.AudioEncoder&&window.AudioData&&window.Mp4Muxer))throw new Error('Este navegador não gera áudio MP4. Use o Chrome ou o Edge atualizado.');
+      const f=files[0],SR=48000;ui.status('Lendo o áudio...');
+      let buf;try{const ac=new AudioContext({sampleRate:SR});buf=await ac.decodeAudioData(await f.arrayBuffer());ac.close()}catch(_){throw new Error('Não foi possível ler o áudio deste arquivo.')}
+      const s=parseTime(o.start,0),e=Math.min(parseTime(o.end,buf.duration),buf.duration);
+      if(s>=buf.duration||e<=s)throw new Error('O trecho é inválido. O áudio tem '+fmtT(buf.duration)+'.');
+      const ch=Math.min(2,buf.numberOfChannels),pcm=[];for(let c=0;c<ch;c++)pcm.push(buf.getChannelData(c));
+      const C=CODECS();let codec=C.a,mc=C.am;const br=+o.br;
+      if(!(await AudioEncoder.isConfigSupported({codec,sampleRate:SR,numberOfChannels:ch,bitrate:br})).supported)throw new Error('Este navegador não tem o codificador de áudio AAC. Use o Chrome ou o Edge atualizado.');
+      const target=new Mp4Muxer.ArrayBufferTarget(),muxer=new Mp4Muxer.Muxer({target,audio:{codec:mc,numberOfChannels:ch,sampleRate:SR},fastStart:'in-memory',firstTimestampBehavior:'offset'});
+      let err=null;const enc=new AudioEncoder({output:(c,m)=>muxer.addAudioChunk(c,m),error:x=>{err=x}});enc.configure({codec,sampleRate:SR,numberOfChannels:ch,bitrate:br});
+      const s0=Math.floor(s*SR),s1=Math.floor(e*SR);let pos=s0;
+      while(pos<s1){
+        const n=Math.min(8192,s1-pos),data=new Float32Array(n*ch);
+        for(let c=0;c<ch;c++)data.set(pcm[c].subarray(pos,pos+n),c*n);
+        const ad=new AudioData({format:'f32-planar',sampleRate:SR,numberOfFrames:n,numberOfChannels:ch,timestamp:Math.round((pos-s0)/SR*1e6),data});enc.encode(ad);ad.close();pos+=n;
+        if(err)throw err;if(((pos-s0)/8192|0)%50===0){ui.prog((pos-s0)/(s1-s0),'Processando...');await new Promise(r=>setTimeout(r))}
+      }
+      await enc.flush();if(err)throw err;muxer.finalize();
+      return {blob:new Blob([target.buffer],{type:'video/mp4'}),name:baseName(f)+'-audio.mp4'};
+    }},
+  img_conv:{title:'Converter, comprimir e redimensionar imagens',hint:'jpg, png, webp (vários de uma vez)',accept:'image/*,.jpg,.jpeg,.png,.webp',multiple:true,
+    opts:[SEL('fmt','Formato',[['keep','Manter o formato'],['jpg','JPG'],['png','PNG (sem perdas)'],['webp','WebP']],'keep'),
+      NUM('q','Qualidade (1 a 100)','',90,'min="1" max="100" step="1"'),NUM('maxw','Largura máxima em px (opcional)','Ex: 1920','','min="16" step="1"')],
+    note:'Qualidade 90 a 100 não mostra perda visível. PNG não usa o campo de qualidade. Ao converter, os dados da câmera (EXIF) e a posição GPS são removidos. Com mais de um arquivo, o resultado vem em um ZIP.',
+    async run(files,o,ui){
+      const out=[],q=Math.min(100,Math.max(1,+o.q||90))/100,maxw=+o.maxw||0;
+      for(let i=0;i<files.length;i++){
+        const f=files[i];ui.prog(i/files.length,'Processando '+(i+1)+' de '+files.length+'...');
+        let bmp;try{bmp=await createImageBitmap(f)}catch(_){throw new Error('Não foi possível abrir a imagem "'+f.name+'". Use JPG, PNG ou WebP.')}
+        let w=bmp.width,h=bmp.height;if(maxw&&w>maxw){h=Math.round(h*maxw/w);w=maxw}
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;const ctx=cv.getContext('2d');
+        const mime0={jpg:'image/jpeg',png:'image/png',webp:'image/webp'}[o.fmt]||(/jpe?g/i.test(f.type)?'image/jpeg':/webp/i.test(f.type)?'image/webp':'image/png');
+        if(mime0==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h)}
+        ctx.imageSmoothingQuality='high';ctx.drawImage(bmp,0,0,w,h);bmp.close&&bmp.close();
+        const blob=await new Promise(r=>cv.toBlob(r,mime0,mime0==='image/png'?undefined:q));
+        if(!blob)throw new Error('Este navegador não consegue gerar '+mime0.split('/')[1].toUpperCase()+'.');
+        const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[blob.type]||'png';
+        out.push({name:baseName(f)+'.'+ext,blob});
+      }
+      if(out.length===1)return {blob:out[0].blob,name:out[0].name,};
+      const names={};out.forEach(x=>{if(names[x.name]){x.name=x.name.replace(/(\.\w+)$/,'-'+(++names[x.name])+'$1')}else names[x.name]=1});
+      return {blob:await zipOf(out),name:'imagens.zip'};
+    }},
+  pdf_merge:{title:'Juntar PDFs',hint:'escolha 2 ou mais PDFs, na ordem em que devem ficar',accept:'application/pdf,.pdf',multiple:true,min:2,opts:[],
+    note:'As páginas são copiadas sem recompressão. A ordem é a da lista. '+pdfNote,
+    async run(files,o,ui){
+      const out=await PDFLib.PDFDocument.create();
+      for(let i=0;i<files.length;i++){ui.prog(i/files.length,'Juntando '+(i+1)+' de '+files.length+'...');
+        const src=await loadPdf(files[i]);(await out.copyPages(src,src.getPageIndices())).forEach(p=>out.addPage(p))}
+      return {blob:new Blob([await out.save({useObjectStreams:true})],{type:'application/pdf'}),name:'pdfs-unidos.pdf'};
+    }},
+  pdf_split:{title:'Dividir PDF',hint:'um PDF',accept:'application/pdf,.pdf',multiple:false,
+    opts:[SEL('mode','Dividir em',[['each','Uma página por arquivo'],['groups','Grupos de páginas']],'each'),TXT('groups','Grupos (separe com ponto e vírgula)','Ex: 1-3; 4-6; 7-','')],
+    note:'Em "Grupos de páginas", cada grupo vira um arquivo (ex: 1-3; 4-6; 7-). O resultado vem em um ZIP. '+pdfNote,
+    async run(files,o,ui){
+      const f=files[0],src=await loadPdf(f),total=src.getPageCount();
+      const groups=o.mode==='each'?src.getPageIndices().map(i=>[i]):String(o.groups).split(';').map(x=>x.trim()).filter(Boolean).map(g=>parseRanges(g,total));
+      if(!groups.length)throw new Error('Informe os grupos de páginas, por exemplo 1-3; 4-6.');
+      const out=[],pad=String(groups.length).length;
+      for(let i=0;i<groups.length;i++){ui.prog(i/groups.length,'Criando arquivo '+(i+1)+' de '+groups.length+'...');
+        const d=await PDFLib.PDFDocument.create();(await d.copyPages(src,groups[i])).forEach(p=>d.addPage(p));
+        out.push({name:baseName(f)+'-parte-'+String(i+1).padStart(pad,'0')+'.pdf',blob:new Blob([await d.save({useObjectStreams:true})],{type:'application/pdf'})})}
+      return {blob:await zipOf(out),name:baseName(f)+'-dividido.zip'};
+    }},
+  pdf_extract:{title:'Extrair páginas',hint:'um PDF',accept:'application/pdf,.pdf',multiple:false,
+    opts:[TXT('pages','Páginas a extrair','Ex: 1-3,5,8-','')],
+    note:'Use vírgulas e traços (1-3,5,8-). As páginas saem na ordem em que você escrever. '+pdfNote,
+    async run(files,o,ui){
+      const f=files[0],src=await loadPdf(f),idx=parseRanges(o.pages,src.getPageCount());
+      const d=await PDFLib.PDFDocument.create();(await d.copyPages(src,idx)).forEach(p=>d.addPage(p));
+      return {blob:new Blob([await d.save({useObjectStreams:true})],{type:'application/pdf'}),name:baseName(f)+'-extraido.pdf'};
+    }},
+  pdf_rotate:{title:'Girar páginas',hint:'um PDF',accept:'application/pdf,.pdf',multiple:false,
+    opts:[SEL('angle','Girar',[['90','90° para a direita'],['180','180°'],['270','90° para a esquerda']],'90'),TXT('pages','Páginas (vazio = todas)','Ex: 2,4-6','')],
+    note:'O PDF original é mantido, só a rotação das páginas muda. '+pdfNote,
+    async run(files,o,ui){
+      const f=files[0],doc=await loadPdf(f),total=doc.getPageCount();
+      const idx=String(o.pages).trim()?parseRanges(o.pages,total):doc.getPageIndices();
+      idx.forEach(i=>{const pg=doc.getPage(i);pg.setRotation(PDFLib.degrees((pg.getRotation().angle+ +o.angle)%360))});
+      return {blob:new Blob([await doc.save({useObjectStreams:true})],{type:'application/pdf'}),name:baseName(f)+'-girado.pdf'};
+    }}
+};
+
+/* ---------- painel genérico ---------- */
+let gFiles=[],gOut=null,gName='',gBusy=false;
+const optVal=()=>{const o={};(TOOLS[curTool].opts||[]).forEach(x=>{o[x.id]=$('go_'+x.id).value});return o};
+function renderTool(id){
+  const T=TOOLS[id];gFiles=[];gOut=null;
+  $('gTitle').textContent=T.title;$('gHint').textContent=T.hint;$('gfile').accept=T.accept;$('gfile').multiple=!!T.multiple;
+  $('gopts').innerHTML=(T.opts||[]).map(o=>o.type==='select'
+    ?'<label class="sel" for="go_'+o.id+'">'+o.label+'<select id="go_'+o.id+'">'+o.opts.map(([v,t])=>'<option value="'+v+'"'+(o.def===v?' selected':'')+'>'+t+'</option>').join('')+'</select></label>'
+    :'<label class="sel" for="go_'+o.id+'">'+o.label+'<input id="go_'+o.id+'" type="'+o.type+'" placeholder="'+(o.ph||'')+'" value="'+(o.def==null?'':o.def)+'" '+(o.attrs||'')+'></label>').join('');
+  $('gnote').textContent=T.note||'';$('gnote').hidden=!T.note;
+  $('ggo').textContent={vid_cut:'Processar vídeo',aud_conv:'Gerar áudio',img_conv:'Converter imagens',pdf_merge:'Juntar PDFs',pdf_split:'Dividir PDF',pdf_extract:'Extrair páginas',pdf_rotate:'Girar páginas'}[id]||'Executar';
+  drawList();$('gerr').textContent='';$('gstatus').textContent='';$('gres').hidden=true;$('gsave').hidden=true;$('gbar').hidden=true;$('gwarn').textContent='';
+}
+function drawList(){
+  const T=TOOLS[curTool];
+  $('glist').innerHTML='';
+  gFiles.forEach((f,i)=>{const li=document.createElement('li');const sp=document.createElement('span');sp.textContent=f.name+' ('+fmtMB(f.size)+')';
+    const b=document.createElement('button');b.textContent='Remover';b.onclick=()=>{gFiles.splice(i,1);drawList()};li.append(sp,b);$('glist').append(li)});
+  $('gAdj').hidden=!gFiles.length||gFiles.length<(T.min||1);
+  if(gFiles.length&&gFiles.length<(T.min||1))$('gerr').textContent='Escolha pelo menos '+T.min+' arquivos.';else if($('gerr').textContent.startsWith('Escolha pelo menos'))$('gerr').textContent='';
+}
+function addFiles(list){
+  const T=TOOLS[curTool];$('gerr').textContent='';
+  let arr=[...list];
+  if(!T.multiple)gFiles=[];
+  gFiles=gFiles.concat(arr);gOut=null;$('gres').hidden=true;$('gsave').hidden=true;$('gstatus').textContent='';
+  drawList();
+}
+$('gdrop').onclick=()=>$('gfile').click();
+$('gdrop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('gfile').click()}};
+['dragover','dragenter'].forEach(ev=>$('gdrop').addEventListener(ev,e=>{e.preventDefault();$('gdrop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('gdrop').addEventListener(ev,e=>{e.preventDefault();$('gdrop').classList.remove('over')}));
+$('gdrop').addEventListener('drop',e=>{if(e.dataTransfer.files.length)addFiles(e.dataTransfer.files)});
+$('gfile').onchange=e=>{if(e.target.files.length)addFiles(e.target.files);e.target.value=''};
+$('ggo').onclick=async()=>{
+  if(gBusy)return;const T=TOOLS[curTool];if(!gFiles.length)return;
+  gBusy=true;$('ggo').disabled=true;gOut=null;$('gres').hidden=true;$('gsave').hidden=true;$('gerr').textContent='';$('gwarn').textContent='';$('gstatus').className='msg';
+  const bar=$('gbar');bar.hidden=false;bar.value=0;
+  const ui={prog:(f,t)=>{bar.value=Math.min(1,f);if(t)$('gstatus').textContent=t},status:t=>{$('gstatus').textContent=t}};
+  let wake=null;try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen')}catch(_){}
+  try{
+    if(!window.PDFLib&&/^pdf_/.test(curTool))throw new Error('As ferramentas de PDF não carregaram. Recarregue a página.');
+    if(/^pdf_|^img_conv$/.test(curTool)&&/^pdf_/.test(curTool)&&gFiles.some(f=>!(/\.pdf$/i.test(f.name)||f.type==='application/pdf')))throw new Error('Use apenas arquivos PDF.');
+    const r=await T.run(gFiles,optVal(),ui);
+    gOut=r.blob;gName=r.name;bar.value=1;
+    $('gBefore').textContent=fmtMB(gFiles.reduce((a,f)=>a+f.size,0));$('gAfter').textContent=fmtMB(gOut.size);
+    $('gres').hidden=false;$('gsave').hidden=false;
+    if(/^pdf_/.test(curTool))$('gwarn').textContent=pdfNote;
+    $('gstatus').textContent='Pronto! Salve o resultado abaixo.';$('gstatus').className='msg ok';
+    $('gsave').scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(e){$('gstatus').textContent=(e&&e.message)||'Não foi possível concluir.';$('gstatus').className='msg err'}
+  try{wake&&wake.release()}catch(_){}
+  gBusy=false;$('ggo').disabled=false;
+};
+$('gsave').onclick=async()=>{
+  if(!gOut)return;let d=null;try{d=await claude.use('downloads')}catch(_){}
+  if(!d){$('gsmsg').textContent='Salvar direto não está disponível aqui. Abra a página no navegador.';$('gsmsg').className='msg err';return}
+  try{await d.save({filename:gName,data:gOut});$('gsmsg').textContent=''}
+  catch(e){if(e&&e.code!=='declined'){$('gsmsg').textContent='Não foi possível salvar. Tente de novo.';$('gsmsg').className='msg err'}}
+};
+setCat('vid');
+</script>
